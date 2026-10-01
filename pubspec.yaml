@@ -1,0 +1,63 @@
+name: smorder
+description: "smOrder - the requester's own order-placing app (brygadzista), same app family as ../smpda/../smVendor."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Same versions as ../smpda/../smVendor - one app family, one shadcn/navy
+  # design system (see lib/theme/, mirrored from ../smVendor's own, itself
+  # mirroring wps's app/globals.css). shadcn_ui pulls in lucide_icons_flutter
+  # too.
+  shadcn_ui: ^0.57.0
+  flutter_riverpod: ^3.4.3
+  dio: ^5.11.1
+
+  # PL/EN translations (see lib/i18n/) - same versions as ../smpda/../smVendor
+  # so `dart run slang`'s generated code matches.
+  slang: 4.19.2
+  slang_flutter: 4.19.0
+
+  # Persists the chosen language/theme across restarts - same package
+  # ../smVendor uses for its own settings.
+  shared_preferences: ^2.5.3
+
+  # The photo on a "Wywożenie odpadu" order (see features/orders/photo_field.dart):
+  # camera or gallery on Android, a plain file input on web. Shrinks the
+  # picture on the device (maxWidth/imageQuality) so what goes up to wpsApi's
+  # object storage is a web-sized JPEG, not a 12 MP original.
+  image_picker: ^1.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  build_runner: ^2.16.1
+  slang_build_runner: ^4.19.0
+
+flutter:
+  uses-material-design: true
+
+  # Same family/weights as ../smpda's/../smVendor's own copy (see
+  # lib/theme/app_theme.dart's own comment) - matches wps's Tailwind font
+  # stack.
+  fonts:
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/Satoshi-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Satoshi-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Satoshi-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Satoshi-Black.ttf
+          weight: 900
