@@ -59,27 +59,35 @@
       "itemsTitle": "Items",
       "problemReported": "Problem reported",
       "photoUnavailable": "The photo is unavailable right now.",
-      "autoAcceptIn": "Confirms itself in {time} if you do nothing.",
-      "autoAcceptPlain": "Confirms itself if you do nothing.",
+      "autoAcceptIn": "Automatically confirms in {time}",
+      "autoAcceptPlain": "Automatically confirms itself",
       "accept": "Confirm",
       "acceptError": "Could not confirm receipt.",
       "reportProblem": "Report a problem",
       "problemTitle": "Report a problem",
-      "problemDescription": "Describe what is wrong with the delivery. The operator will put it right and mark it done - the order is not cancelled.",
+      "problemDescription": "Describe what is wrong with the delivery.",
       "problemPlaceholder": "What is wrong?",
       "problemSubmit": "Report",
       "problemCancel": "Cancel",
       "problemError": "Could not report the problem.",
       "problemFromVendor": "The forklift operator reported a problem",
       "problemBy": "reported by {who}",
-      "problemWaitingOnYou": "This order is waiting on you - the forklift operator cannot finish it.",
       "problemResolve": "Problem solved",
       "problemResolvedTitle": "Problem solved",
       "resolveError": "Could not mark the problem as solved.",
       "chat": "Chat",
-      "chatSoon": "soon",
       "problemMine": "Problem reported - waiting for the forklift operator",
-      "problemWaitingOnVendor": "The forklift operator will put it right and mark it done."
+      "edit": "Edit",
+      "editError": "Could not open the edit.",
+      "cancelOrder": "Cancel order",
+      "cancelTitle": "Cancelling the order",
+      "cancelPlaceholder": "Reason",
+      "cancelConfirm": "Cancel the order",
+      "cancelError": "Could not cancel the order.",
+      "deleteTitle": "Delete the order?",
+      "deleteDescription": "It will be gone without a trace. To keep it in history, cancel it with a reason instead.",
+      "deleteConfirm": "Delete",
+      "deleteError": "Could not delete the order."
     },
     "details": {
       "water": "Water type",
@@ -122,7 +130,25 @@
       "linePick": "Pick a line",
       "itemsChosen": "To bring",
       "noteAdd": "Add a note",
-      "submitWithItems": "Place order ({count} items)"
+      "submitWithItems": "Place order ({count} items)",
+      "save": "Save changes",
+      "editTitleFor": "Editing: {type}",
+      "cipSpoolsTitle": "Spools on this order",
+      "cipNoSpools": "This order has no spool assigned."
+    },
+    "sectionProblem": "Problem",
+    "sectionAwaitingAccept": "Awaiting your confirmation",
+    "sectionInProgress": "In progress",
+    "sectionNew": "New",
+    "chat": {
+      "title": "Chat",
+      "placeholder": "Write a message...",
+      "empty": "No messages.",
+      "loadError": "Could not load the chat.",
+      "sendError": "Could not send the message."
+    },
+    "history": {
+      "allLoaded": "That's everything."
     }
   },
   "account": {

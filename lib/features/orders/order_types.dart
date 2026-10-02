@@ -19,6 +19,7 @@ class OrderTypeConfig {
     required this.iconLight,
     required this.iconDark,
     this.freeText = false,
+    this.productionOrderNoRequired = false,
   });
 
   final String code;
@@ -34,6 +35,13 @@ class OrderTypeConfig {
   final Color iconDark;
 
   Color iconColor(Brightness brightness) => brightness == Brightness.dark ? iconDark : iconLight;
+
+  /// Whether the order cannot be placed without the production order
+  /// number. True for material_order, where the number *is* the order (the
+  /// materials come from its BOM); false for spool_order, where it only
+  /// finds the drum and a spool can still be picked from the catalog by
+  /// hand, which is how that type worked before.
+  final bool productionOrderNoRequired;
 
   /// true only for goods_transport - "skąd"/"dokąd" there accept any typed
   /// place (registered and suggested from then on), not just the fixed
@@ -57,13 +65,18 @@ const orderTypes = [
   OrderTypeConfig(
     code: 'material_order',
     fields: {OrderField.to, OrderField.productionOrderNo, OrderField.items},
+    productionOrderNoRequired: true,
     icon: LucideIcons.package,
     iconLight: AppColors.pink600,
     iconDark: AppColors.pink400,
   ),
   OrderTypeConfig(
     code: 'spool_order',
-    fields: {OrderField.to, OrderField.items},
+    // The production order number is how the spool is found: CIP knows
+    // which drum(s) that order's cable ships on. Unlike material_order it
+    // is **not** required - a spool can still be added straight from the
+    // catalog search below, which is how this type worked before.
+    fields: {OrderField.to, OrderField.productionOrderNo, OrderField.items},
     icon: LucideIcons.spool,
     iconLight: AppColors.gray600,
     // wps pairs this one with neutral-300, not gray-400.
@@ -93,7 +106,8 @@ const orderTypes = [
   ),
 ];
 
-OrderTypeConfig orderTypeConfig(String code) => orderTypes.firstWhere((t) => t.code == code, orElse: () => orderTypes.first);
+OrderTypeConfig orderTypeConfig(String code) =>
+    orderTypes.firstWhere((t) => t.code == code, orElse: () => orderTypes.first);
 
 /// "skąd" asks a different thing per type - waste_removal's own place, or
 /// warehouse_return's "gdzie odebrać" - same FROM_LABEL_KEY idea as wps's

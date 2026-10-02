@@ -92,6 +92,12 @@ class _Translations$orders$en implements Translations$orders$pl {
 	@override late final _Translations$orders$detail$en detail = _Translations$orders$detail$en._(_root);
 	@override late final _Translations$orders$details$en details = _Translations$orders$details$en._(_root);
 	@override late final _Translations$orders$newOrder$en newOrder = _Translations$orders$newOrder$en._(_root);
+	@override String get sectionProblem => 'Problem';
+	@override String get sectionAwaitingAccept => 'Awaiting your confirmation';
+	@override String get sectionInProgress => 'In progress';
+	@override String get sectionNew => 'New';
+	@override late final _Translations$orders$chat$en chat = _Translations$orders$chat$en._(_root);
+	@override late final _Translations$orders$history$en history = _Translations$orders$history$en._(_root);
 }
 
 // Path: account
@@ -184,27 +190,35 @@ class _Translations$orders$detail$en implements Translations$orders$detail$pl {
 	@override String get itemsTitle => 'Items';
 	@override String get problemReported => 'Problem reported';
 	@override String get photoUnavailable => 'The photo is unavailable right now.';
-	@override String autoAcceptIn({required Object time}) => 'Confirms itself in ${time} if you do nothing.';
-	@override String get autoAcceptPlain => 'Confirms itself if you do nothing.';
+	@override String autoAcceptIn({required Object time}) => 'Automatically confirms in ${time}';
+	@override String get autoAcceptPlain => 'Automatically confirms itself';
 	@override String get accept => 'Confirm';
 	@override String get acceptError => 'Could not confirm receipt.';
 	@override String get reportProblem => 'Report a problem';
 	@override String get problemTitle => 'Report a problem';
-	@override String get problemDescription => 'Describe what is wrong with the delivery. The operator will put it right and mark it done - the order is not cancelled.';
+	@override String get problemDescription => 'Describe what is wrong with the delivery.';
 	@override String get problemPlaceholder => 'What is wrong?';
 	@override String get problemSubmit => 'Report';
 	@override String get problemCancel => 'Cancel';
 	@override String get problemError => 'Could not report the problem.';
 	@override String get problemFromVendor => 'The forklift operator reported a problem';
 	@override String problemBy({required Object who}) => 'reported by ${who}';
-	@override String get problemWaitingOnYou => 'This order is waiting on you - the forklift operator cannot finish it.';
 	@override String get problemResolve => 'Problem solved';
 	@override String get problemResolvedTitle => 'Problem solved';
 	@override String get resolveError => 'Could not mark the problem as solved.';
 	@override String get chat => 'Chat';
-	@override String get chatSoon => 'soon';
 	@override String get problemMine => 'Problem reported - waiting for the forklift operator';
-	@override String get problemWaitingOnVendor => 'The forklift operator will put it right and mark it done.';
+	@override String get edit => 'Edit';
+	@override String get editError => 'Could not open the edit.';
+	@override String get cancelOrder => 'Cancel order';
+	@override String get cancelTitle => 'Cancelling the order';
+	@override String get cancelPlaceholder => 'Reason';
+	@override String get cancelConfirm => 'Cancel the order';
+	@override String get cancelError => 'Could not cancel the order.';
+	@override String get deleteTitle => 'Delete the order?';
+	@override String get deleteDescription => 'It will be gone without a trace. To keep it in history, cancel it with a reason instead.';
+	@override String get deleteConfirm => 'Delete';
+	@override String get deleteError => 'Could not delete the order.';
 }
 
 // Path: orders.details
@@ -262,6 +276,34 @@ class _Translations$orders$newOrder$en implements Translations$orders$newOrder$p
 	@override String get itemsChosen => 'To bring';
 	@override String get noteAdd => 'Add a note';
 	@override String submitWithItems({required Object count}) => 'Place order (${count} items)';
+	@override String get save => 'Save changes';
+	@override String editTitleFor({required Object type}) => 'Editing: ${type}';
+	@override String get cipSpoolsTitle => 'Spools on this order';
+	@override String get cipNoSpools => 'This order has no spool assigned.';
+}
+
+// Path: orders.chat
+class _Translations$orders$chat$en implements Translations$orders$chat$pl {
+	_Translations$orders$chat$en._(this._root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Chat';
+	@override String get placeholder => 'Write a message...';
+	@override String get empty => 'No messages.';
+	@override String get loadError => 'Could not load the chat.';
+	@override String get sendError => 'Could not send the message.';
+}
+
+// Path: orders.history
+class _Translations$orders$history$en implements Translations$orders$history$pl {
+	_Translations$orders$history$en._(this._root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get allLoaded => 'That\'s everything.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -318,27 +360,35 @@ extension on TranslationsEn {
 			'orders.detail.itemsTitle' => 'Items',
 			'orders.detail.problemReported' => 'Problem reported',
 			'orders.detail.photoUnavailable' => 'The photo is unavailable right now.',
-			'orders.detail.autoAcceptIn' => ({required Object time}) => 'Confirms itself in ${time} if you do nothing.',
-			'orders.detail.autoAcceptPlain' => 'Confirms itself if you do nothing.',
+			'orders.detail.autoAcceptIn' => ({required Object time}) => 'Automatically confirms in ${time}',
+			'orders.detail.autoAcceptPlain' => 'Automatically confirms itself',
 			'orders.detail.accept' => 'Confirm',
 			'orders.detail.acceptError' => 'Could not confirm receipt.',
 			'orders.detail.reportProblem' => 'Report a problem',
 			'orders.detail.problemTitle' => 'Report a problem',
-			'orders.detail.problemDescription' => 'Describe what is wrong with the delivery. The operator will put it right and mark it done - the order is not cancelled.',
+			'orders.detail.problemDescription' => 'Describe what is wrong with the delivery.',
 			'orders.detail.problemPlaceholder' => 'What is wrong?',
 			'orders.detail.problemSubmit' => 'Report',
 			'orders.detail.problemCancel' => 'Cancel',
 			'orders.detail.problemError' => 'Could not report the problem.',
 			'orders.detail.problemFromVendor' => 'The forklift operator reported a problem',
 			'orders.detail.problemBy' => ({required Object who}) => 'reported by ${who}',
-			'orders.detail.problemWaitingOnYou' => 'This order is waiting on you - the forklift operator cannot finish it.',
 			'orders.detail.problemResolve' => 'Problem solved',
 			'orders.detail.problemResolvedTitle' => 'Problem solved',
 			'orders.detail.resolveError' => 'Could not mark the problem as solved.',
 			'orders.detail.chat' => 'Chat',
-			'orders.detail.chatSoon' => 'soon',
 			'orders.detail.problemMine' => 'Problem reported - waiting for the forklift operator',
-			'orders.detail.problemWaitingOnVendor' => 'The forklift operator will put it right and mark it done.',
+			'orders.detail.edit' => 'Edit',
+			'orders.detail.editError' => 'Could not open the edit.',
+			'orders.detail.cancelOrder' => 'Cancel order',
+			'orders.detail.cancelTitle' => 'Cancelling the order',
+			'orders.detail.cancelPlaceholder' => 'Reason',
+			'orders.detail.cancelConfirm' => 'Cancel the order',
+			'orders.detail.cancelError' => 'Could not cancel the order.',
+			'orders.detail.deleteTitle' => 'Delete the order?',
+			'orders.detail.deleteDescription' => 'It will be gone without a trace. To keep it in history, cancel it with a reason instead.',
+			'orders.detail.deleteConfirm' => 'Delete',
+			'orders.detail.deleteError' => 'Could not delete the order.',
 			'orders.details.water' => 'Water type',
 			'orders.details.clean' => 'Clean water',
 			'orders.details.dirty' => 'Mauser for dirty water',
@@ -378,6 +428,20 @@ extension on TranslationsEn {
 			'orders.newOrder.itemsChosen' => 'To bring',
 			'orders.newOrder.noteAdd' => 'Add a note',
 			'orders.newOrder.submitWithItems' => ({required Object count}) => 'Place order (${count} items)',
+			'orders.newOrder.save' => 'Save changes',
+			'orders.newOrder.editTitleFor' => ({required Object type}) => 'Editing: ${type}',
+			'orders.newOrder.cipSpoolsTitle' => 'Spools on this order',
+			'orders.newOrder.cipNoSpools' => 'This order has no spool assigned.',
+			'orders.sectionProblem' => 'Problem',
+			'orders.sectionAwaitingAccept' => 'Awaiting your confirmation',
+			'orders.sectionInProgress' => 'In progress',
+			'orders.sectionNew' => 'New',
+			'orders.chat.title' => 'Chat',
+			'orders.chat.placeholder' => 'Write a message...',
+			'orders.chat.empty' => 'No messages.',
+			'orders.chat.loadError' => 'Could not load the chat.',
+			'orders.chat.sendError' => 'Could not send the message.',
+			'orders.history.allLoaded' => 'That\'s everything.',
 			'account.logout' => 'Log out',
 			'account.language' => 'Language',
 			'account.languagePolish' => 'Polski',

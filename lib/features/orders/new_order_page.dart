@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
@@ -25,8 +27,18 @@ import 'orders_api.dart';
 /// No photo field (unlike wps's own form) - see OrdersApi.create's own
 /// comment on why that's a dead field everywhere today.
 class NewOrderPage extends ConsumerStatefulWidget {
-  const NewOrderPage({super.key, required this.typeCode});
+  const NewOrderPage({super.key, required this.typeCode, this.editing});
   final String typeCode;
+
+  /// The order being changed, or null for a new one. In edit mode the form
+  /// opens filled in, saves with PATCH instead of POST, and keeps the edit
+  /// lock alive while it is open (see wpsApi's startOrderEdit) so no
+  /// forklift operator can take the order mid-rewrite.
+  ///
+  /// The same form on purpose: an edited order has exactly the same fields
+  /// as a new one, and a second screen would be the same code with a
+  /// different submit button - and would drift.
+  final TransportOrder? editing;
 
   @override
   ConsumerState<NewOrderPage> createState() => _NewOrderPageState();
@@ -34,6 +46,12 @@ class NewOrderPage extends ConsumerStatefulWidget {
 
 class _NewOrderPageState extends ConsumerState<NewOrderPage> {
   late final OrderTypeConfig _config = orderTypeConfig(widget.typeCode);
+  bool get _isEdit => widget.editing != null;
+
+  /// Pushes the edit lock out while the form stays open - it expires on
+  /// purpose (an app killed mid-edit must not hide an order for good), so a
+  /// long edit has to say it is still going.
+  Timer? _lockTimer;
 
   String _from = '';
   String _to = '';
@@ -44,6 +62,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
 
   List<String> _locations = [];
   PickedPhoto? _photo;
+
   /// "Uwagi" starts collapsed - see the field itself.
   bool _noteOpen = false;
   bool _submitting = false;
@@ -52,6 +71,22 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
   @override
   void initState() {
     super.initState();
+    final editing = widget.editing;
+    if (editing != null) {
+      _from = editing.from ?? '';
+      _to = editing.to ?? '';
+      _water = editing.water ?? '';
+      _productionOrderNoController.text = editing.productionOrderNo ?? '';
+      _noteController.text = editing.note == '-' ? '' : editing.note;
+      _noteOpen = _noteController.text.isNotEmpty;
+      _items = [for (final i in editing.items) ItemRow(itemNo: i.itemNo, itemName: i.itemName, quantity: i.quantity)];
+      _lockTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+        ref
+            .read(ordersApiProvider)
+            .startEdit(editing.id, ref.read(sessionProvider).value?.userId ?? '')
+            .catchError((_) => editing);
+      });
+    }
     if (_config.freeText) {
       ref.read(ordersApiProvider).locations().then((locs) {
         if (mounted) setState(() => _locations = locs);
@@ -61,6 +96,17 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
 
   @override
   void dispose() {
+    _lockTimer?.cancel();
+    final editing = widget.editing;
+    if (editing != null) {
+      // Abandoned (or saved - the save already released it, and releasing
+      // twice is harmless): put the order back on the queue now rather than
+      // leaving it hidden until the lock expires.
+      ref
+          .read(ordersApiProvider)
+          .stopEdit(editing.id, ref.read(sessionProvider).value?.userId ?? '')
+          .catchError((_) {});
+    }
     _productionOrderNoController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -81,7 +127,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
     if (hasTo && _to.trim().isEmpty) return false;
     if (hasFrom && hasTo && _from.trim().toLowerCase() == _to.trim().toLowerCase()) return false;
     if (_config.has(OrderField.water) && _water.isEmpty) return false;
-    if (_config.has(OrderField.productionOrderNo) && _productionOrderNoController.text.trim().isEmpty) return false;
+    if (_config.productionOrderNoRequired && _productionOrderNoController.text.trim().isEmpty) return false;
     if (_config.has(OrderField.items) && _validItems.isEmpty) return false;
     return _isValidPlace;
   }
@@ -101,7 +147,27 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
       final employeeNo = ref.read(sessionProvider).value?.userId ?? '';
       final details = <String, dynamic>{};
       if (_config.has(OrderField.water)) details['water'] = _water;
-      if (_config.has(OrderField.productionOrderNo)) details['productionOrderNo'] = _productionOrderNoController.text.trim();
+      if (_config.has(OrderField.productionOrderNo)) {
+        details['productionOrderNo'] = _productionOrderNoController.text.trim();
+      }
+
+      final editing = widget.editing;
+      if (editing != null) {
+        await ref
+            .read(ordersApiProvider)
+            .update(
+              editing.id,
+              employeeNo: employeeNo,
+              from: _config.has(OrderField.from) ? _from.trim() : null,
+              to: _config.has(OrderField.to) ? _to.trim() : null,
+              details: details,
+              note: _noteController.text.trim(),
+              items: _config.has(OrderField.items) ? _validItems.map((r) => r.toNewOrderItem()).toList() : const [],
+            );
+        if (!mounted) return;
+        Navigator.of(context).pop(true);
+        return;
+      }
 
       final order = await ref
           .read(ordersApiProvider)
@@ -151,7 +217,10 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _error = context.t.orders.newOrder.submitError);
+      // wpsApi says why it refused ("Zamówienie jest już realizowane...",
+      // "...musi mieć co najmniej jedną pozycję") - its words beat a generic
+      // "nie udało się", because they say what to do about it.
+      setState(() => _error = e is OrderActionFailure ? e.message : context.t.orders.newOrder.submitError);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -169,7 +238,12 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
     final inRow = _config.has(OrderField.from) && _config.has(OrderField.to);
 
     Widget fromField() => _config.freeText
-        ? FreeTextLocationField(label: fromLabel, value: _from, suggestions: _locations, onChanged: (v) => setState(() => _from = v))
+        ? FreeTextLocationField(
+            label: fromLabel,
+            value: _from,
+            suggestions: _locations,
+            onChanged: (v) => setState(() => _from = v),
+          )
         : LineHeroField(label: fromLabel, value: _from, onChanged: (v) => setState(() => _from = v));
 
     Widget toField() => _config.freeText
@@ -190,11 +264,16 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
               padding: const EdgeInsets.fromLTRB(4, 8, 16, 8),
               child: Row(
                 children: [
-                  ShadButton.ghost(onPressed: () => Navigator.of(context).pop(false), child: const Icon(LucideIcons.arrowLeft)),
+                  ShadButton.ghost(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Icon(LucideIcons.arrowLeft),
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      t.newOrder.titleFor(type: orderTypeLabel(context.t, _config.code)),
+                      _isEdit
+                          ? t.newOrder.editTitleFor(type: orderTypeLabel(context.t, _config.code))
+                          : t.newOrder.titleFor(type: orderTypeLabel(context.t, _config.code)),
                       style: theme.textTheme.h3.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -246,18 +325,21 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                     ),
                   ],
 
-                  // "Zamówienie materiału" asks for the production order
-                  // first and then lists exactly what that order needs, to
-                  // tap - see CipMaterialsField. Every other type with items
-                  // searches the whole catalog instead (ItemPicker's own
-                  // search box), which is why the picker below only shows it
-                  // when there is no production order driving the list.
+                  // Both item types are driven by a production order number,
+                  // a fragment of which is enough (see CipMaterialsField):
+                  //  - "Zamówienie materiału" lists what that order needs,
+                  //    and the number is required - it *is* the order.
+                  //  - "Zamówienie szpul" lists the drum(s) that order's
+                  //    cable ships on, and the number is optional: the
+                  //    catalog search below stays available, so a spool can
+                  //    still be named by hand as it always could.
                   if (_config.has(OrderField.productionOrderNo)) ...[
                     const SizedBox(height: 16),
                     CipMaterialsField(
                       controller: _productionOrderNoController,
                       rows: _items,
                       onRowsChanged: (rows) => setState(() => _items = rows),
+                      onlyDrums: !_config.productionOrderNoRequired,
                       // The resolved full number lands in the controller the
                       // form already submits; this only rebuilds so the
                       // submit button re-evaluates _canSubmit.
@@ -270,7 +352,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                     ItemPicker(
                       rows: _items,
                       onChanged: (rows) => setState(() => _items = rows),
-                      showSearch: !_config.has(OrderField.productionOrderNo),
+                      showSearch: !_config.productionOrderNoRequired,
                     ),
                   ],
 
@@ -287,11 +369,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                   if (_noteOpen) ...[
                     Text(t.newOrder.note, style: theme.textTheme.muted),
                     const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _noteController,
-                      placeholder: Text(t.newOrder.notePlaceholder),
-                      maxLines: 3,
-                    ),
+                    ShadInput(controller: _noteController, placeholder: Text(t.newOrder.notePlaceholder), maxLines: 3),
                   ] else
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
@@ -300,7 +378,10 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                         children: [
                           Icon(LucideIcons.plus, size: 16, color: theme.colorScheme.mutedForeground),
                           const SizedBox(width: 6),
-                          Text(t.newOrder.noteAdd, style: theme.textTheme.small.copyWith(color: theme.colorScheme.mutedForeground)),
+                          Text(
+                            t.newOrder.noteAdd,
+                            style: theme.textTheme.small.copyWith(color: theme.colorScheme.mutedForeground),
+                          ),
                         ],
                       ),
                     ),
@@ -355,6 +436,9 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
   /// the list itself is usually scrolled above the footer by then.
   String _submitLabel() {
     final t = context.t.orders.newOrder;
+    // An edit saves rather than places - and the item count, useful when
+    // composing an order, says nothing extra when changing one.
+    if (_isEdit) return t.save;
     if (!_config.has(OrderField.items) || _validItems.isEmpty) return t.submit;
     return t.submitWithItems(count: _validItems.length);
   }

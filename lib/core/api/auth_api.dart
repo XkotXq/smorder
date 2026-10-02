@@ -79,7 +79,7 @@ class AuthFailure implements Exception {
 
 /// POST /api/auth/login - proxies the company's legacy CIP system's OAuth2
 /// password grant (see wpsApi's src/routes/auth.js). Doesn't need the
-/// shared bearer apiToken, unlike every other wpsApi route. No deviceLabel
+/// shared bearer apiToken, unlike every other wpsApi route. No extra
 /// param (unlike smVendor's own) - that's a per-forklift setting, not
 /// relevant to whoever is placing orders from this app.
 class AuthApi {

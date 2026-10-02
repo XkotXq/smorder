@@ -155,6 +155,24 @@ same order in both. That means:
   on the Konto page).
 - Live data is **plain REST polling**, same reasoning as smVendor's.
 
+## Keyboard and system bars (`main.dart`)
+Both wrappers sit inside `ShadApp`, so they cover every route pushed later.
+- **`_AboveKeyboard`** pads the whole app by `MediaQuery.viewInsets.bottom`
+  and strips that inset for everything below it. Android is already told to
+  resize (`windowSoftInputMode="adjustResize"`), but that only makes it
+  *report* the inset - Material's Scaffold is what normally turns it into
+  padding, and these apps have none (shadcn_ui on
+  `package:flutter/widgets.dart`), so the keyboard used to sit on top of
+  whatever was at the bottom: the chat's send button, "Dostarczone", the
+  problem footer. `removeViewInsets` matters: without it a scrolling field
+  or a SafeArea counts the inset a second time and leaves a keyboard-sized
+  gap.
+- **`_SystemBars`** asks for dark status-bar icons on the light theme and
+  light ones on the dark theme, reading the **resolved** brightness from
+  `ShadTheme` so "system" lands on the right one. An app that asks for
+  nothing gets light icons, which are invisible on this app's light
+  background - the clock and the battery simply were not there.
+
 ## Configuration
 `core/api/api_client.dart` has the wpsApi address hardcoded (the family's
 LAN address). The shared bearer token is **not** in the source (public

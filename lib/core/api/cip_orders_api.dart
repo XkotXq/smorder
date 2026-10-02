@@ -15,6 +15,7 @@ class CipOrderMaterial {
     required this.unit,
     required this.requiredQuantity,
     required this.changedFrom,
+    required this.isDrumRequirement,
   });
 
   factory CipOrderMaterial.fromJson(Map<String, dynamic> json) {
@@ -25,6 +26,7 @@ class CipOrderMaterial {
       unit: json['unit'] as String? ?? '',
       requiredQuantity: (json['requiredQuantity'] as num?)?.toDouble(),
       changedFrom: change?['from'] as String?,
+      isDrumRequirement: json['isDrumRequirement'] as bool? ?? false,
     );
   }
 
@@ -38,6 +40,14 @@ class CipOrderMaterial {
   /// How much of it the whole production order needs, per CIP. Null for a
   /// drum requirement, which carries no quantity.
   final double? requiredQuantity;
+
+  /// A **drum/spool** this order's cable ships on, rather than a material it
+  /// is made of. CIP keeps that as free text per order line and wpsApi
+  /// matches it against sm_catalog's own "Drum" category, appending it to
+  /// the same `materials` list with no quantity (see its AGENTS.md, "Order
+  /// lookup"). "Zamówienie szpul" wants exactly these and nothing else;
+  /// "Zamówienie materiału" wants the rest.
+  final bool isDrumRequirement;
 
   /// Set when this material was substituted after the order was planned -
   /// the item it replaced. Worth showing, so nobody wonders why the BOM they

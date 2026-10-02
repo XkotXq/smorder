@@ -28,7 +28,14 @@ class CipMaterialsField extends ConsumerStatefulWidget {
     required this.rows,
     required this.onRowsChanged,
     required this.onOrderNoResolved,
+    this.onlyDrums = false,
   });
+
+  /// "Zamówienie szpul": list only the drums/spools this order's cable ships
+  /// on (CipOrderMaterial.isDrumRequirement) and leave the materials out. On
+  /// a material order it is the other way round - a drum is not something
+  /// the line is asking to be brought as stock.
+  final bool onlyDrums;
 
   /// The productionOrderNo field - owned by the form, since it is submitted
   /// with the order (`details.productionOrderNo`).
@@ -84,15 +91,28 @@ class _CipMaterialsFieldState extends ConsumerState<CipMaterialsField> {
       var lines = await _lookup(typed, token);
       if (!mounted) return;
 
-      // Drop lines whose BOM has nothing this warehouse stocks - the
-      // endpoint already filters the materials, so such a line would only be
-      // an empty heading.
+      // One list or the other, never both: a spool order wants the drums
+      // this order's cable ships on, a material order the materials it is
+      // made of (see CipOrderMaterial.isDrumRequirement). Filtered here, at
+      // the source, so the headings, the empty state and the rows below all
+      // agree about what is on offer.
+      lines = [
+        for (final line in lines)
+          CipOrderLine(
+            orderId: line.orderId,
+            segDescription: line.segDescription,
+            materials: line.materials.where((m) => m.isDrumRequirement == widget.onlyDrums).toList(),
+          ),
+      ];
+      // Then drop lines left with nothing - the endpoint already filters to
+      // what this warehouse stocks, so such a line would only be an empty
+      // heading.
       lines = lines.where((l) => l.materials.isNotEmpty).toList();
       setState(() {
         _lines = lines;
         _searchedFor = typed;
         _status = _Status.loaded;
-        _error = lines.isEmpty ? t.cipNoMaterials : null;
+        _error = lines.isEmpty ? (widget.onlyDrums ? t.cipNoSpools : t.cipNoMaterials) : null;
       });
 
       final resolved = _resolvedOrderNo(lines, typed);
@@ -137,7 +157,10 @@ class _CipMaterialsFieldState extends ConsumerState<CipMaterialsField> {
   /// one, otherwise their shared base number without the "(line)" suffix -
   /// same rule as wps's own resolvedOrderLabelFromIds.
   String _resolvedOrderNo(List<CipOrderLine> lines, String fallback) {
-    final ids = <String>{for (final l in lines) if (l.orderId.isNotEmpty) l.orderId}.toList();
+    final ids = <String>{
+      for (final l in lines)
+        if (l.orderId.isNotEmpty) l.orderId,
+    }.toList();
     if (ids.isEmpty) return fallback;
     if (ids.length == 1) return ids.first;
     final base = ids.first.replaceFirst(RegExp(r'\(\d+\)$'), '');
@@ -194,7 +217,10 @@ class _CipMaterialsFieldState extends ConsumerState<CipMaterialsField> {
         ],
         if (_status == _Status.loaded && _lines.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text(t.cipMaterialsTitle, style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            widget.onlyDrums ? t.cipSpoolsTitle : t.cipMaterialsTitle,
+            style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 6),
           for (final line in _lines) ...[
             // Only worth naming the line when the typed number matched more
@@ -279,10 +305,7 @@ class _MaterialRow extends StatelessWidget {
             // joined onto the item number as one meta string.
             if (qty != null) ...[
               const SizedBox(width: 10),
-              Text(
-                '${_trim(qty)} ${material.unit}'.trim(),
-                style: theme.textTheme.muted.copyWith(fontSize: 12),
-              ),
+              Text('${_trim(qty)} ${material.unit}'.trim(), style: theme.textTheme.muted.copyWith(fontSize: 12)),
             ],
           ],
         ),

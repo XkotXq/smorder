@@ -129,6 +129,21 @@ class Translations$orders$pl {
 	late final Translations$orders$detail$pl detail = Translations$orders$detail$pl._(_root);
 	late final Translations$orders$details$pl details = Translations$orders$details$pl._(_root);
 	late final Translations$orders$newOrder$pl newOrder = Translations$orders$newOrder$pl._(_root);
+
+	/// pl: 'Problem'
+	String get sectionProblem => 'Problem';
+
+	/// pl: 'Oczekujące na akceptację'
+	String get sectionAwaitingAccept => 'Oczekujące na akceptację';
+
+	/// pl: 'Obecnie realizowane'
+	String get sectionInProgress => 'Obecnie realizowane';
+
+	/// pl: 'Nowe'
+	String get sectionNew => 'Nowe';
+
+	late final Translations$orders$chat$pl chat = Translations$orders$chat$pl._(_root);
+	late final Translations$orders$history$pl history = Translations$orders$history$pl._(_root);
 }
 
 // Path: account
@@ -256,8 +271,8 @@ class Translations$orders$card$pl {
 	/// pl: 'Wymaga Twojej reakcji'
 	String get problemNeedsYou => 'Wymaga Twojej reakcji';
 
-	/// pl: 'Wózkowy ma to poprawić'
-	String get problemWithVendor => 'Wózkowy ma to poprawić';
+	/// pl: 'Czeka na wózkowego'
+	String get problemWithVendor => 'Czeka na wózkowego';
 }
 
 // Path: orders.detail
@@ -298,11 +313,11 @@ class Translations$orders$detail$pl {
 	/// pl: 'Zdjęcie jest chwilowo niedostępne.'
 	String get photoUnavailable => 'Zdjęcie jest chwilowo niedostępne.';
 
-	/// pl: 'Samo potwierdzi się za {time}, jeśli nic nie zrobisz.'
-	String autoAcceptIn({required Object time}) => 'Samo potwierdzi się za ${time}, jeśli nic nie zrobisz.';
+	/// pl: 'Automatycznie potwierdzi się za {time}'
+	String autoAcceptIn({required Object time}) => 'Automatycznie potwierdzi się za ${time}';
 
-	/// pl: 'Potwierdzi się samo, jeśli nic nie zrobisz.'
-	String get autoAcceptPlain => 'Potwierdzi się samo, jeśli nic nie zrobisz.';
+	/// pl: 'Automatycznie potwierdzi się'
+	String get autoAcceptPlain => 'Automatycznie potwierdzi się';
 
 	/// pl: 'Zgadza się'
 	String get accept => 'Zgadza się';
@@ -316,8 +331,8 @@ class Translations$orders$detail$pl {
 	/// pl: 'Zgłoszenie problemu'
 	String get problemTitle => 'Zgłoszenie problemu';
 
-	/// pl: 'Napisz, co jest nie tak z dostawą. Wózkowy to poprawi i oznaczy, że gotowe - zamówienie nie zostanie anulowane.'
-	String get problemDescription => 'Napisz, co jest nie tak z dostawą. Wózkowy to poprawi i oznaczy, że gotowe - zamówienie nie zostanie anulowane.';
+	/// pl: 'Napisz, co jest nie tak z dostawą.'
+	String get problemDescription => 'Napisz, co jest nie tak z dostawą.';
 
 	/// pl: 'Opis problemu - co jest nie tak?'
 	String get problemPlaceholder => 'Opis problemu - co jest nie tak?';
@@ -337,9 +352,6 @@ class Translations$orders$detail$pl {
 	/// pl: 'zgłosił {who}'
 	String problemBy({required Object who}) => 'zgłosił ${who}';
 
-	/// pl: 'Zamówienie czeka na Ciebie - wózkowy nie może go dokończyć.'
-	String get problemWaitingOnYou => 'Zamówienie czeka na Ciebie - wózkowy nie może go dokończyć.';
-
 	/// pl: 'Problem rozwiązany'
 	String get problemResolve => 'Problem rozwiązany';
 
@@ -352,14 +364,41 @@ class Translations$orders$detail$pl {
 	/// pl: 'Czat'
 	String get chat => 'Czat';
 
-	/// pl: 'wkrótce'
-	String get chatSoon => 'wkrótce';
-
 	/// pl: 'Zgłoszono problem - czeka na wózkowego'
 	String get problemMine => 'Zgłoszono problem - czeka na wózkowego';
 
-	/// pl: 'Wózkowy ma to poprawić i oznaczyć, że gotowe.'
-	String get problemWaitingOnVendor => 'Wózkowy ma to poprawić i oznaczyć, że gotowe.';
+	/// pl: 'Edytuj'
+	String get edit => 'Edytuj';
+
+	/// pl: 'Nie udało się otworzyć edycji.'
+	String get editError => 'Nie udało się otworzyć edycji.';
+
+	/// pl: 'Anuluj'
+	String get cancelOrder => 'Anuluj';
+
+	/// pl: 'Anulowanie zamówienia'
+	String get cancelTitle => 'Anulowanie zamówienia';
+
+	/// pl: 'Powód anulowania'
+	String get cancelPlaceholder => 'Powód anulowania';
+
+	/// pl: 'Anuluj zamówienie'
+	String get cancelConfirm => 'Anuluj zamówienie';
+
+	/// pl: 'Nie udało się anulować zamówienia.'
+	String get cancelError => 'Nie udało się anulować zamówienia.';
+
+	/// pl: 'Usunąć zamówienie?'
+	String get deleteTitle => 'Usunąć zamówienie?';
+
+	/// pl: 'Zamówienie zniknie bez śladu. Jeżeli ma zostać w historii, anuluj je z powodem.'
+	String get deleteDescription => 'Zamówienie zniknie bez śladu. Jeżeli ma zostać w historii, anuluj je z powodem.';
+
+	/// pl: 'Usuń'
+	String get deleteConfirm => 'Usuń';
+
+	/// pl: 'Nie udało się usunąć zamówienia.'
+	String get deleteError => 'Nie udało się usunąć zamówienia.';
 }
 
 // Path: orders.details
@@ -495,6 +534,54 @@ class Translations$orders$newOrder$pl {
 
 	/// pl: 'Złóż zamówienie ({count} poz.)'
 	String submitWithItems({required Object count}) => 'Złóż zamówienie (${count} poz.)';
+
+	/// pl: 'Zapisz zmiany'
+	String get save => 'Zapisz zmiany';
+
+	/// pl: 'Edycja: {type}'
+	String editTitleFor({required Object type}) => 'Edycja: ${type}';
+
+	/// pl: 'Szpule z tego zamówienia'
+	String get cipSpoolsTitle => 'Szpule z tego zamówienia';
+
+	/// pl: 'To zamówienie nie ma przypisanej szpuli.'
+	String get cipNoSpools => 'To zamówienie nie ma przypisanej szpuli.';
+}
+
+// Path: orders.chat
+class Translations$orders$chat$pl {
+	Translations$orders$chat$pl._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// pl: 'Czat'
+	String get title => 'Czat';
+
+	/// pl: 'Napisz wiadomość...'
+	String get placeholder => 'Napisz wiadomość...';
+
+	/// pl: 'Brak wiadomości.'
+	String get empty => 'Brak wiadomości.';
+
+	/// pl: 'Nie udało się pobrać czatu.'
+	String get loadError => 'Nie udało się pobrać czatu.';
+
+	/// pl: 'Nie udało się wysłać wiadomości.'
+	String get sendError => 'Nie udało się wysłać wiadomości.';
+}
+
+// Path: orders.history
+class Translations$orders$history$pl {
+	Translations$orders$history$pl._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// pl: 'To już wszystko.'
+	String get allLoaded => 'To już wszystko.';
 }
 
 /// The flat map containing all translations for locale <pl>.
@@ -540,7 +627,7 @@ extension on Translations {
 			'orders.status.problem' => 'Problem',
 			'orders.card.employeeNo' => 'Zlecający',
 			'orders.card.problemNeedsYou' => 'Wymaga Twojej reakcji',
-			'orders.card.problemWithVendor' => 'Wózkowy ma to poprawić',
+			'orders.card.problemWithVendor' => 'Czeka na wózkowego',
 			'orders.detail.line' => 'Linia',
 			'orders.detail.productionOrderNo' => 'Numer zamówienia',
 			'orders.detail.employeeNo' => 'Zlecający',
@@ -551,27 +638,35 @@ extension on Translations {
 			'orders.detail.itemsTitle' => 'Pozycje',
 			'orders.detail.problemReported' => 'Zgłoszono problem',
 			'orders.detail.photoUnavailable' => 'Zdjęcie jest chwilowo niedostępne.',
-			'orders.detail.autoAcceptIn' => ({required Object time}) => 'Samo potwierdzi się za ${time}, jeśli nic nie zrobisz.',
-			'orders.detail.autoAcceptPlain' => 'Potwierdzi się samo, jeśli nic nie zrobisz.',
+			'orders.detail.autoAcceptIn' => ({required Object time}) => 'Automatycznie potwierdzi się za ${time}',
+			'orders.detail.autoAcceptPlain' => 'Automatycznie potwierdzi się',
 			'orders.detail.accept' => 'Zgadza się',
 			'orders.detail.acceptError' => 'Nie udało się potwierdzić odbioru.',
 			'orders.detail.reportProblem' => 'Zgłoś problem',
 			'orders.detail.problemTitle' => 'Zgłoszenie problemu',
-			'orders.detail.problemDescription' => 'Napisz, co jest nie tak z dostawą. Wózkowy to poprawi i oznaczy, że gotowe - zamówienie nie zostanie anulowane.',
+			'orders.detail.problemDescription' => 'Napisz, co jest nie tak z dostawą.',
 			'orders.detail.problemPlaceholder' => 'Opis problemu - co jest nie tak?',
 			'orders.detail.problemSubmit' => 'Zgłoś',
 			'orders.detail.problemCancel' => 'Anuluj',
 			'orders.detail.problemError' => 'Nie udało się zgłosić problemu.',
 			'orders.detail.problemFromVendor' => 'Wózkowy zgłosił problem',
 			'orders.detail.problemBy' => ({required Object who}) => 'zgłosił ${who}',
-			'orders.detail.problemWaitingOnYou' => 'Zamówienie czeka na Ciebie - wózkowy nie może go dokończyć.',
 			'orders.detail.problemResolve' => 'Problem rozwiązany',
 			'orders.detail.problemResolvedTitle' => 'Problem rozwiązany',
 			'orders.detail.resolveError' => 'Nie udało się oznaczyć problemu jako rozwiązanego.',
 			'orders.detail.chat' => 'Czat',
-			'orders.detail.chatSoon' => 'wkrótce',
 			'orders.detail.problemMine' => 'Zgłoszono problem - czeka na wózkowego',
-			'orders.detail.problemWaitingOnVendor' => 'Wózkowy ma to poprawić i oznaczyć, że gotowe.',
+			'orders.detail.edit' => 'Edytuj',
+			'orders.detail.editError' => 'Nie udało się otworzyć edycji.',
+			'orders.detail.cancelOrder' => 'Anuluj',
+			'orders.detail.cancelTitle' => 'Anulowanie zamówienia',
+			'orders.detail.cancelPlaceholder' => 'Powód anulowania',
+			'orders.detail.cancelConfirm' => 'Anuluj zamówienie',
+			'orders.detail.cancelError' => 'Nie udało się anulować zamówienia.',
+			'orders.detail.deleteTitle' => 'Usunąć zamówienie?',
+			'orders.detail.deleteDescription' => 'Zamówienie zniknie bez śladu. Jeżeli ma zostać w historii, anuluj je z powodem.',
+			'orders.detail.deleteConfirm' => 'Usuń',
+			'orders.detail.deleteError' => 'Nie udało się usunąć zamówienia.',
 			'orders.details.water' => 'Rodzaj wody',
 			'orders.details.clean' => 'Czysta woda',
 			'orders.details.dirty' => 'Mauzer na brudną wodę',
@@ -611,6 +706,20 @@ extension on Translations {
 			'orders.newOrder.itemsChosen' => 'Do przywiezienia',
 			'orders.newOrder.noteAdd' => 'Dodaj uwagę',
 			'orders.newOrder.submitWithItems' => ({required Object count}) => 'Złóż zamówienie (${count} poz.)',
+			'orders.newOrder.save' => 'Zapisz zmiany',
+			'orders.newOrder.editTitleFor' => ({required Object type}) => 'Edycja: ${type}',
+			'orders.newOrder.cipSpoolsTitle' => 'Szpule z tego zamówienia',
+			'orders.newOrder.cipNoSpools' => 'To zamówienie nie ma przypisanej szpuli.',
+			'orders.sectionProblem' => 'Problem',
+			'orders.sectionAwaitingAccept' => 'Oczekujące na akceptację',
+			'orders.sectionInProgress' => 'Obecnie realizowane',
+			'orders.sectionNew' => 'Nowe',
+			'orders.chat.title' => 'Czat',
+			'orders.chat.placeholder' => 'Napisz wiadomość...',
+			'orders.chat.empty' => 'Brak wiadomości.',
+			'orders.chat.loadError' => 'Nie udało się pobrać czatu.',
+			'orders.chat.sendError' => 'Nie udało się wysłać wiadomości.',
+			'orders.history.allLoaded' => 'To już wszystko.',
 			'account.logout' => 'Wyloguj',
 			'account.language' => 'Język',
 			'account.languagePolish' => 'Polski',

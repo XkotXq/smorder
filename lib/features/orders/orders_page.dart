@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../../core/session/session_providers.dart';
 import '../../i18n/gen/strings.g.dart';
 import 'new_order_page.dart';
 import 'order_detail_page.dart';
@@ -47,32 +48,54 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
   // to ever see it or its reason again.
   String _scope = 'active';
 
+  /// History is loaded a page at a time (see _loadMore): pulling every order
+  /// ever closed on first paint was fine on day one and would not stay fine.
+  /// The active list is not paged - it is the open work, which is small by
+  /// definition.
+  static const _historyPageSize = 25;
+  bool _historyHasMore = true;
+  bool _loadingMore = false;
+  final _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _load();
+    _scrollController.addListener(_onScroll);
     _pollTimer = Timer.periodic(_pollInterval, (_) => _poll());
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _pollTimer?.cancel();
     super.dispose();
   }
 
   void _setScope(String scope) {
     if (scope == _scope) return;
-    setState(() => _scope = scope);
+    setState(() {
+      _scope = scope;
+      _orders = const [];
+      _historyHasMore = true;
+    });
     _load();
   }
 
   Future<void> _load() async {
     setState(() => _status = _LoadStatus.loading);
     try {
-      final orders = await ref.read(ordersApiProvider).list(_scope);
+      final history = _scope == 'history';
+      final orders = await ref.read(ordersApiProvider).list(
+        _scope,
+        limit: history ? _historyPageSize : null,
+        viewer: ref.read(sessionProvider).value?.userId,
+      );
       if (!mounted) return;
       setState(() {
         _orders = orders;
+        // A short page means the server has nothing older.
+        if (history) _historyHasMore = orders.length == _historyPageSize;
         _status = _LoadStatus.ready;
       });
     } catch (_) {
@@ -82,10 +105,15 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
   }
 
   Future<void> _poll() async {
+    // Finished orders do not change, and re-fetching page one here would
+    // throw away every page loaded after it.
+    if (_scope == 'history') return;
     if (_polling) return;
     _polling = true;
     try {
-      final orders = await ref.read(ordersApiProvider).list(_scope);
+      final orders = await ref
+          .read(ordersApiProvider)
+          .list(_scope, viewer: ref.read(sessionProvider).value?.userId);
       if (!mounted) return;
       setState(() {
         _orders = orders;
@@ -127,6 +155,44 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
     if (created == true && mounted) _load();
   }
 
+  /// Asks for the next page a screenful before the end, so the rows are
+  /// there by the time the reader reaches them. The cursor is **the last
+  /// order already held**, not an offset: orders close while somebody is
+  /// scrolling, and an offset would repeat or skip a row at every page
+  /// boundary (see wpsApi's listOrders).
+  void _onScroll() {
+    if (_scope != 'history' || !_historyHasMore || _loadingMore) return;
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels < position.maxScrollExtent - 400) return;
+    _loadMore();
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_historyHasMore || _orders.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final page = await ref.read(ordersApiProvider).list(
+        'history',
+        limit: _historyPageSize,
+        before: _orders.last,
+        viewer: ref.read(sessionProvider).value?.userId,
+      );
+      if (!mounted) return;
+      final known = _orders.map((o) => o.id).toSet();
+      setState(() {
+        _orders = [..._orders, ...page.where((o) => !known.contains(o.id))];
+        _historyHasMore = page.length == _historyPageSize;
+        _loadingMore = false;
+      });
+    } catch (_) {
+      // Keeps what is on screen and leaves _historyHasMore alone, so
+      // reaching the bottom again retries - a dropped request on warehouse
+      // Wi-Fi must not look like the end of the list.
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
@@ -143,24 +209,95 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
       list = Center(child: Text(t.empty, style: theme.textTheme.muted));
     } else {
       final wide = MediaQuery.sizeOf(context).width >= _kWideBreakpoint;
-      list = wide
-          ? GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
-              ),
-              itemCount: _orders.length,
-              itemBuilder: (context, index) => _OrderCard(order: _orders[index], onTap: () => _openDetail(_orders[index])),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: _orders.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _OrderCard(order: _orders[index], onTap: () => _openDetail(_orders[index])),
-            );
+      if (_scope == 'history') {
+        // One extra slot at the end: "wczytywanie" while the next page is
+        // coming, or "to już wszystko" once there is nothing older. A list
+        // that simply stops leaves the reader wondering which it is.
+        final footer = _loadingMore || (!_historyHasMore && _orders.length > _historyPageSize) ? 1 : 0;
+        Widget? footerRow() {
+          if (_loadingMore) return Center(child: Text(t.loading, style: theme.textTheme.muted));
+          if (!_historyHasMore) {
+            return Center(child: Text(t.history.allLoaded, style: theme.textTheme.muted.copyWith(fontSize: 12)));
+          }
+          return null;
+        }
+
+        list = wide
+            ? GridView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.3,
+                ),
+                itemCount: _orders.length,
+                itemBuilder: (context, index) => _OrderCard(order: _orders[index], onTap: () => _openDetail(_orders[index])),
+              )
+            : ListView.separated(
+                controller: _scrollController,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                itemCount: _orders.length + footer,
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  if (index >= _orders.length) return footerRow() ?? const SizedBox.shrink();
+                  return _OrderCard(order: _orders[index], onTap: () => _openDetail(_orders[index]));
+                },
+              );
+      } else {
+        // Grouped by what the order is doing, and ordered by **what it wants
+        // from the person reading the screen**: the two groups that need an
+        // answer come before the two that are only news. Same reasoning as
+        // smVendor's own sections.
+        final sections = [
+          (title: t.sectionProblem, orders: _orders.where((o) => o.status == 'problem').toList()),
+          (title: t.sectionAwaitingAccept, orders: _orders.where((o) => o.status == 'delivered').toList()),
+          (title: t.sectionInProgress, orders: _orders.where((o) => o.status == 'inProgress').toList()),
+          (title: t.sectionNew, orders: _orders.where((o) => o.status == 'new').toList()),
+        ].where((s) => s.orders.isNotEmpty).toList();
+
+        list = ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+          children: [
+            for (var i = 0; i < sections.length; i++) ...[
+              if (i > 0) const SizedBox(height: 22),
+              _SectionHeader(title: sections[i].title, count: sections[i].orders.length),
+              if (wide)
+                // Content-height rows rather than a grid: a card is as tall
+                // as what is in it, and only stretches to match the tallest
+                // one beside it (no Flutter grid does that - see smVendor's
+                // own _CardRows).
+                for (var r = 0; r < (sections[i].orders.length / 3).ceil(); r++) ...[
+                  if (r > 0) const SizedBox(height: 12),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var c = 0; c < 3; c++) ...[
+                          if (c > 0) const SizedBox(width: 12),
+                          Expanded(
+                            child: r * 3 + c < sections[i].orders.length
+                                ? _OrderCard(
+                                    order: sections[i].orders[r * 3 + c],
+                                    onTap: () => _openDetail(sections[i].orders[r * 3 + c]),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ]
+              else
+                for (var j = 0; j < sections[i].orders.length; j++) ...[
+                  if (j > 0) const SizedBox(height: 12),
+                  _OrderCard(order: sections[i].orders[j], onTap: () => _openDetail(sections[i].orders[j])),
+                ],
+            ],
+          ],
+        );
+      }
     }
 
     return Stack(
@@ -271,6 +408,30 @@ class _OrderTypeSheet extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A group heading with how many orders are under it - the count is the
+/// useful part ("one waiting" vs "nine waiting" changes what you do), and it
+/// saves counting cards. Deliberately the same as smVendor's own.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.count});
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Text(title, style: theme.textTheme.p.copyWith(fontSize: 17, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 8),
+          Text('$count', style: theme.textTheme.muted),
+        ],
       ),
     );
   }
@@ -406,6 +567,29 @@ class _OrderCard extends StatelessWidget {
             // (left) and the order number (right, demoted to muted small
             // from the heading it used to be).
             const SizedBox(height: 10),
+            if (order.messageCount > 0) ...[
+              Row(
+                children: [
+                  Icon(
+                    LucideIcons.messageCircle,
+                    size: 14,
+                    color: order.unreadCount > 0 ? theme.colorScheme.primary : theme.colorScheme.mutedForeground,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    order.unreadCount > 0 ? '${order.unreadCount}' : '${order.messageCount}',
+                    style: order.unreadCount > 0
+                        ? theme.textTheme.small.copyWith(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: theme.colorScheme.primary,
+                          )
+                        : theme.textTheme.muted.copyWith(fontSize: 12),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+            ],
             Row(
               children: [
                 Expanded(

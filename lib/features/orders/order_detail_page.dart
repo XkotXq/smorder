@@ -6,6 +6,8 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../core/session/session_providers.dart';
 import '../../i18n/gen/strings.g.dart';
+import 'new_order_page.dart';
+import 'order_chat_page.dart';
 import 'order_status.dart';
 import 'order_types.dart';
 import 'orders_api.dart';
@@ -76,7 +78,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Future<void> _load() async {
     setState(() => _status = _LoadStatus.loading);
     try {
-      final order = await ref.read(ordersApiProvider).get(widget.orderId);
+      final order = await ref
+          .read(ordersApiProvider)
+          .get(widget.orderId, viewer: ref.read(sessionProvider).value?.userId);
       if (!mounted) return;
       setState(() {
         _order = order;
@@ -93,7 +97,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     if (_polling) return;
     _polling = true;
     try {
-      final order = await ref.read(ordersApiProvider).get(widget.orderId);
+      final order = await ref
+          .read(ordersApiProvider)
+          .get(widget.orderId, viewer: ref.read(sessionProvider).value?.userId);
       if (!mounted) return;
       setState(() {
         _order = order;
@@ -125,6 +131,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         _syncCountdown(updated);
         _acting = false;
       });
+    } on OrderActionFailure catch (e) {
+      // wpsApi refused it and said why ("Zamówienie przyjął już ...", "Nie
+      // wszystkie pozycje zostały wydane ..."). Its own words beat a generic
+      // "nie udało się": they say what the order's state actually is.
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e.message;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -153,6 +168,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         _order = updated;
         _syncCountdown(updated);
         _acting = false;
+      });
+    } on OrderActionFailure catch (e) {
+      // wpsApi refused it and said why ("Zamówienie przyjął już ...", "Nie
+      // wszystkie pozycje zostały wydane ..."). Its own words beat a generic
+      // "nie udało się": they say what the order's state actually is.
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e.message;
       });
     } catch (_) {
       if (!mounted) return;
@@ -186,6 +210,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         _syncCountdown(updated);
         _acting = false;
       });
+    } on OrderActionFailure catch (e) {
+      // wpsApi refused it and said why ("Zamówienie przyjął już ...", "Nie
+      // wszystkie pozycje zostały wydane ..."). Its own words beat a generic
+      // "nie udało się": they say what the order's state actually is.
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e.message;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -193,6 +226,108 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         _actionError = context.t.orders.detail.problemError;
       });
     }
+  }
+
+  /// Can this person still change this order? Only their own, and only
+  /// before a forklift operator has started it - after that the way out is
+  /// the problem loop, not an edit (wpsApi refuses the rest anyway).
+  bool get _editable {
+    final order = _order;
+    if (order == null) return false;
+    return order.status == 'new' && order.employeeNo == (ref.read(sessionProvider).value?.userId ?? '');
+  }
+
+  /// "Edytuj" - takes the edit lock first, which hides the order from the
+  /// forklift operators' queue, then opens the same form it was placed
+  /// with. The lock is released by saving or by leaving (see NewOrderPage).
+  Future<void> _edit() async {
+    final order = _order;
+    if (order == null) return;
+    setState(() {
+      _acting = true;
+      _actionError = null;
+    });
+    try {
+      await ref.read(ordersApiProvider).startEdit(order.id, ref.read(sessionProvider).value?.userId ?? '');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e is OrderActionFailure ? e.message : context.t.orders.detail.editError;
+      });
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _acting = false);
+    await Navigator.of(context).push(
+      PageRouteBuilder(pageBuilder: (context, _, _) => NewOrderPage(typeCode: order.type, editing: order)),
+    );
+    if (mounted) _load();
+  }
+
+  /// "Anuluj" - closed with a reason and kept in history. A reason is asked
+  /// for because the only person who will ever read it is somebody
+  /// wondering later why this transport never happened.
+  Future<void> _cancel() async {
+    final order = _order;
+    if (order == null) return;
+    final reason = await showShadDialog<String>(context: context, builder: (_) => const _CancelDialog());
+    if (reason == null || !mounted) return;
+    setState(() {
+      _acting = true;
+      _actionError = null;
+    });
+    try {
+      final updated = await ref.read(ordersApiProvider).cancel(order.id, reason);
+      if (!mounted) return;
+      setState(() {
+        _order = updated;
+        _acting = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e is OrderActionFailure ? e.message : context.t.orders.detail.cancelError;
+      });
+    }
+  }
+
+  /// "Usuń" - gone for good, for an order placed by mistake. Confirmed
+  /// first: unlike cancelling there is nothing left afterwards to look at.
+  Future<void> _delete() async {
+    final order = _order;
+    if (order == null) return;
+    final sure = await showShadDialog<bool>(context: context, builder: (_) => const _DeleteDialog());
+    if (sure != true || !mounted) return;
+    setState(() {
+      _acting = true;
+      _actionError = null;
+    });
+    try {
+      await ref.read(ordersApiProvider).remove(order.id, ref.read(sessionProvider).value?.userId ?? '');
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _acting = false;
+        _actionError = e is OrderActionFailure ? e.message : context.t.orders.detail.deleteError;
+      });
+    }
+  }
+
+  /// "Czat" - the thread on this order (see OrderChatPage). Returning from
+  /// it refreshes the order, so the count on the button is current.
+  Future<void> _openChat() async {
+    final order = _order;
+    if (order == null) return;
+    await Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, _, _) => OrderChatPage(orderId: order.id, orderNo: order.orderNo),
+      ),
+    );
+    if (mounted) _poll();
   }
 
   @override
@@ -240,6 +375,32 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (_order != null) ...[
+                    // Unread first - that is the number worth a glance.
+                    // With nothing unread it falls back to the thread's own
+                    // size, muted, so an existing conversation is still
+                    // visible without shouting.
+                    ShadButton.ghost(
+                      onPressed: _openChat,
+                      leading: Icon(
+                        LucideIcons.messageCircle,
+                        size: 18,
+                        color: _order!.unreadCount > 0 ? theme.colorScheme.primary : null,
+                      ),
+                      child: _order!.unreadCount > 0
+                          ? Text(
+                              '${_order!.unreadCount}',
+                              style: theme.textTheme.small.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.primary,
+                              ),
+                            )
+                          : _order!.messageCount > 0
+                          ? Text('${_order!.messageCount}', style: theme.textTheme.muted)
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   if (_order != null) OrderStatusBadge(status: _order!.status, label: orderStatusLabel(t, _order!.status)),
                 ],
               ),
@@ -261,8 +422,25 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             // slot as the confirmation - the two states never overlap. One
             // they reported themselves shows no footer: the banner already
             // says it is with the operator.
+            // Before anybody starts it, the order is still the
+            // requester's to change - afterwards this slot carries whatever
+            // the order is waiting for instead.
+            else if (_editable)
+              _OwnerFooter(
+                acting: _acting,
+                error: _actionError,
+                onEdit: _edit,
+                onCancel: _cancel,
+                onDelete: _delete,
+              )
             else if (_order?.awaitingProblemResolution ?? false)
-              _ProblemFooter(acting: _acting, error: _actionError, onResolve: _resolveProblem),
+              _ProblemFooter(
+                acting: _acting,
+                error: _actionError,
+                messageCount: _order!.messageCount,
+                onResolve: _resolveProblem,
+                onChat: _openChat,
+              ),
           ],
         ),
       ),
@@ -334,7 +512,6 @@ class _OrderDetailBody extends StatelessWidget {
             note: order.problemNote.isEmpty ? '-' : order.problemNote,
             by: order.problemReportedBy,
             at: order.problemReportedAt,
-            footnote: order.awaitingProblemResolution ? null : t.problemWaitingOnVendor,
           ),
           const SizedBox(height: 16),
         ] else if (order.status == 'cancelled' && (order.cancelReason ?? '').isNotEmpty) ...[
@@ -429,6 +606,141 @@ class _OrderDetailBody extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// What the person who placed an order can still do with it, while nobody
+/// has started it: change it, call it off with a reason, or remove it
+/// outright. Afterwards none of the three is offered - and wpsApi refuses
+/// them anyway, so a stale screen cannot sneak one through.
+class _OwnerFooter extends StatelessWidget {
+  const _OwnerFooter({
+    required this.acting,
+    required this.error,
+    required this.onEdit,
+    required this.onCancel,
+    required this.onDelete,
+  });
+
+  final bool acting;
+  final String? error;
+  final VoidCallback onEdit;
+  final VoidCallback onCancel;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+    final t = context.t.orders.detail;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.background,
+        border: Border(top: BorderSide(color: theme.colorScheme.border)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (error != null) ...[
+            Text(error!, style: theme.textTheme.small.copyWith(color: theme.colorScheme.destructive)),
+            const SizedBox(height: 10),
+          ],
+          Row(
+            children: [
+              // Deleting is the one that cannot be undone, so it is the
+              // smallest and the only one in the destructive colour.
+              SizedBox(
+                height: 48,
+                child: ShadButton.ghost(
+                  onPressed: acting ? null : onDelete,
+                  child: Icon(LucideIcons.trash2, size: 18, color: theme.colorScheme.destructive),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: ShadButton.outline(onPressed: acting ? null : onCancel, child: Text(t.cancelOrder)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: SizedBox(
+                  height: 48,
+                  child: ShadButton(onPressed: acting ? null : onEdit, child: Text(t.edit)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The reason for calling an order off. Required: the row stays in
+/// "Historia" for good, and "anulowane" with no why is a dead end for
+/// whoever reads it later.
+class _CancelDialog extends StatefulWidget {
+  const _CancelDialog();
+
+  @override
+  State<_CancelDialog> createState() => _CancelDialogState();
+}
+
+class _CancelDialogState extends State<_CancelDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t.orders.detail;
+    return ShadDialog(
+      title: Text(t.cancelTitle),
+      actions: [
+        ShadButton.outline(onPressed: () => Navigator.of(context).pop(), child: Text(t.problemCancel)),
+        ShadButton.destructive(
+          onPressed: _controller.text.trim().isEmpty ? null : () => Navigator.of(context).pop(_controller.text.trim()),
+          child: Text(t.cancelConfirm),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: ShadInput(controller: _controller, placeholder: Text(t.cancelPlaceholder), maxLines: 3),
+      ),
+    );
+  }
+}
+
+/// Deleting leaves nothing behind, so it asks once.
+class _DeleteDialog extends StatelessWidget {
+  const _DeleteDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t.orders.detail;
+    return ShadDialog(
+      title: Text(t.deleteTitle),
+      description: Text(t.deleteDescription),
+      actions: [
+        ShadButton.outline(onPressed: () => Navigator.of(context).pop(false), child: Text(t.problemCancel)),
+        ShadButton.destructive(onPressed: () => Navigator.of(context).pop(true), child: Text(t.deleteConfirm)),
+      ],
+      child: const SizedBox.shrink(),
     );
   }
 }
@@ -579,15 +891,11 @@ class _ReportProblemDialogState extends State<_ReportProblemDialog> {
 /// TransportOrder.problemNote) and a cancellation's `cancel_reason` (the
 /// order is closed).
 class _ProblemBanner extends StatelessWidget {
-  const _ProblemBanner({required this.title, required this.note, this.by, this.at, this.footnote});
+  const _ProblemBanner({required this.title, required this.note, this.by, this.at});
   final String title;
   final String note;
   final String? by;
   final DateTime? at;
-
-  /// What happens next, when this person is not the one who has to act -
-  /// otherwise a red banner with no button reads as a dead end.
-  final String? footnote;
 
   @override
   Widget build(BuildContext context) {
@@ -621,10 +929,6 @@ class _ProblemBanner extends StatelessWidget {
                 if (stamp.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(stamp, style: theme.textTheme.muted.copyWith(fontSize: 12)),
-                ],
-                if (footnote != null) ...[
-                  const SizedBox(height: 6),
-                  Text(footnote!, style: theme.textTheme.small.copyWith(fontSize: 12)),
                 ],
               ],
             ),
@@ -688,11 +992,19 @@ class _ResolvedNotice extends StatelessWidget {
 /// it is the pair that makes the primary button an obvious choice instead of
 /// the only one.
 class _ProblemFooter extends StatelessWidget {
-  const _ProblemFooter({required this.acting, required this.error, required this.onResolve});
+  const _ProblemFooter({
+    required this.acting,
+    required this.error,
+    required this.messageCount,
+    required this.onResolve,
+    required this.onChat,
+  });
 
   final bool acting;
   final String? error;
+  final int messageCount;
   final VoidCallback onResolve;
+  final VoidCallback onChat;
 
   @override
   Widget build(BuildContext context) {
@@ -708,32 +1020,19 @@ class _ProblemFooter extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Icon(LucideIcons.triangleAlert, size: 14, color: theme.colorScheme.destructive),
-              const SizedBox(width: 6),
-              Expanded(child: Text(t.problemWaitingOnYou, style: theme.textTheme.muted.copyWith(fontSize: 12))),
-            ],
-          ),
           if (error != null) ...[
-            const SizedBox(height: 8),
             Text(error!, style: theme.textTheme.small.copyWith(color: theme.colorScheme.destructive)),
+            const SizedBox(height: 10),
           ],
-          const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: SizedBox(
                   height: 52,
                   child: ShadButton.outline(
-                    onPressed: null,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(t.chat),
-                        Text(t.chatSoon, style: theme.textTheme.muted.copyWith(fontSize: 10)),
-                      ],
-                    ),
+                    onPressed: onChat,
+                    leading: const Icon(LucideIcons.messageCircle, size: 16),
+                    child: Text(messageCount > 0 ? '${t.chat} ($messageCount)' : t.chat),
                   ),
                 ),
               ),

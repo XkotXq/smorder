@@ -46,7 +46,7 @@
     "card": {
       "employeeNo": "Zlecający",
       "problemNeedsYou": "Wymaga Twojej reakcji",
-      "problemWithVendor": "Wózkowy ma to poprawić"
+      "problemWithVendor": "Czeka na wózkowego"
     },
     "detail": {
       "line": "Linia",
@@ -59,27 +59,35 @@
       "itemsTitle": "Pozycje",
       "problemReported": "Zgłoszono problem",
       "photoUnavailable": "Zdjęcie jest chwilowo niedostępne.",
-      "autoAcceptIn": "Samo potwierdzi się za {time}, jeśli nic nie zrobisz.",
-      "autoAcceptPlain": "Potwierdzi się samo, jeśli nic nie zrobisz.",
+      "autoAcceptIn": "Automatycznie potwierdzi się za {time}",
+      "autoAcceptPlain": "Automatycznie potwierdzi się",
       "accept": "Zgadza się",
       "acceptError": "Nie udało się potwierdzić odbioru.",
       "reportProblem": "Zgłoś problem",
       "problemTitle": "Zgłoszenie problemu",
-      "problemDescription": "Napisz, co jest nie tak z dostawą. Wózkowy to poprawi i oznaczy, że gotowe - zamówienie nie zostanie anulowane.",
+      "problemDescription": "Napisz, co jest nie tak z dostawą.",
       "problemPlaceholder": "Opis problemu - co jest nie tak?",
       "problemSubmit": "Zgłoś",
       "problemCancel": "Anuluj",
       "problemError": "Nie udało się zgłosić problemu.",
       "problemFromVendor": "Wózkowy zgłosił problem",
       "problemBy": "zgłosił {who}",
-      "problemWaitingOnYou": "Zamówienie czeka na Ciebie - wózkowy nie może go dokończyć.",
       "problemResolve": "Problem rozwiązany",
       "problemResolvedTitle": "Problem rozwiązany",
       "resolveError": "Nie udało się oznaczyć problemu jako rozwiązanego.",
       "chat": "Czat",
-      "chatSoon": "wkrótce",
       "problemMine": "Zgłoszono problem - czeka na wózkowego",
-      "problemWaitingOnVendor": "Wózkowy ma to poprawić i oznaczyć, że gotowe."
+      "edit": "Edytuj",
+      "editError": "Nie udało się otworzyć edycji.",
+      "cancelOrder": "Anuluj",
+      "cancelTitle": "Anulowanie zamówienia",
+      "cancelPlaceholder": "Powód anulowania",
+      "cancelConfirm": "Anuluj zamówienie",
+      "cancelError": "Nie udało się anulować zamówienia.",
+      "deleteTitle": "Usunąć zamówienie?",
+      "deleteDescription": "Zamówienie zniknie bez śladu. Jeżeli ma zostać w historii, anuluj je z powodem.",
+      "deleteConfirm": "Usuń",
+      "deleteError": "Nie udało się usunąć zamówienia."
     },
     "details": {
       "water": "Rodzaj wody",
@@ -122,7 +130,25 @@
       "linePick": "Wybierz linię",
       "itemsChosen": "Do przywiezienia",
       "noteAdd": "Dodaj uwagę",
-      "submitWithItems": "Złóż zamówienie ({count} poz.)"
+      "submitWithItems": "Złóż zamówienie ({count} poz.)",
+      "save": "Zapisz zmiany",
+      "editTitleFor": "Edycja: {type}",
+      "cipSpoolsTitle": "Szpule z tego zamówienia",
+      "cipNoSpools": "To zamówienie nie ma przypisanej szpuli."
+    },
+    "sectionProblem": "Problem",
+    "sectionAwaitingAccept": "Oczekujące na akceptację",
+    "sectionInProgress": "Obecnie realizowane",
+    "sectionNew": "Nowe",
+    "chat": {
+      "title": "Czat",
+      "placeholder": "Napisz wiadomość...",
+      "empty": "Brak wiadomości.",
+      "loadError": "Nie udało się pobrać czatu.",
+      "sendError": "Nie udało się wysłać wiadomości."
+    },
+    "history": {
+      "allLoaded": "To już wszystko."
     }
   },
   "account": {
