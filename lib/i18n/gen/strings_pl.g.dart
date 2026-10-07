@@ -144,6 +144,7 @@ class Translations$orders$pl {
 
 	late final Translations$orders$chat$pl chat = Translations$orders$chat$pl._(_root);
 	late final Translations$orders$history$pl history = Translations$orders$history$pl._(_root);
+	late final Translations$orders$priority$pl priority = Translations$orders$priority$pl._(_root);
 }
 
 // Path: account
@@ -226,8 +227,8 @@ class Translations$orders$types$pl {
 	/// pl: 'Zwrot na magazyn'
 	String get warehouse_return => 'Zwrot na magazyn';
 
-	/// pl: 'Transport maszyny'
-	String get machine_transport => 'Transport maszyny';
+	/// pl: 'Przewóz maszyny'
+	String get machine_transport => 'Przewóz maszyny';
 }
 
 // Path: orders.status
@@ -436,9 +437,6 @@ class Translations$orders$newOrder$pl {
 	/// pl: 'Wybierz typ zamówienia'
 	String get pickType => 'Wybierz typ zamówienia';
 
-	/// pl: 'Nowe zamówienie: {type}'
-	String titleFor({required Object type}) => 'Nowe zamówienie: ${type}';
-
 	/// pl: 'Skąd'
 	String get fieldFrom => 'Skąd';
 
@@ -526,8 +524,8 @@ class Translations$orders$newOrder$pl {
 	/// pl: 'Wybierz linię'
 	String get linePick => 'Wybierz linię';
 
-	/// pl: 'Do przywiezienia'
-	String get itemsChosen => 'Do przywiezienia';
+	/// pl: 'Zamawiasz'
+	String get itemsChosen => 'Zamawiasz';
 
 	/// pl: 'Dodaj uwagę'
 	String get noteAdd => 'Dodaj uwagę';
@@ -546,6 +544,9 @@ class Translations$orders$newOrder$pl {
 
 	/// pl: 'To zamówienie nie ma przypisanej szpuli.'
 	String get cipNoSpools => 'To zamówienie nie ma przypisanej szpuli.';
+
+	/// pl: 'Zamień skąd i dokąd'
+	String get swapPlaces => 'Zamień skąd i dokąd';
 }
 
 // Path: orders.chat
@@ -584,6 +585,27 @@ class Translations$orders$history$pl {
 	String get allLoaded => 'To już wszystko.';
 }
 
+// Path: orders.priority
+class Translations$orders$priority$pl {
+	Translations$orders$priority$pl._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// pl: 'Priorytet'
+	String get label => 'Priorytet';
+
+	/// pl: 'Zwykły'
+	String get normal => 'Zwykły';
+
+	/// pl: 'Pilny'
+	String get urgent => 'Pilny';
+
+	/// pl: 'Bardzo pilny'
+	String get critical => 'Bardzo pilny';
+}
+
 /// The flat map containing all translations for locale <pl>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -618,7 +640,7 @@ extension on Translations {
 			'orders.types.goods_transport' => 'Transport półproduktów',
 			'orders.types.waste_removal' => 'Wywożenie odpadu',
 			'orders.types.warehouse_return' => 'Zwrot na magazyn',
-			'orders.types.machine_transport' => 'Transport maszyny',
+			'orders.types.machine_transport' => 'Przewóz maszyny',
 			'orders.status.kNew' => 'Nowe',
 			'orders.status.inProgress' => 'W realizacji',
 			'orders.status.delivered' => 'Dostarczone',
@@ -673,7 +695,6 @@ extension on Translations {
 			'orders.details.productionOrderNo' => 'Numer zamówienia',
 			'orders.newOrder.button' => 'Nowe zamówienie',
 			'orders.newOrder.pickType' => 'Wybierz typ zamówienia',
-			'orders.newOrder.titleFor' => ({required Object type}) => 'Nowe zamówienie: ${type}',
 			'orders.newOrder.fieldFrom' => 'Skąd',
 			'orders.newOrder.fieldPlace' => 'Miejsce',
 			'orders.newOrder.fieldCollectFrom' => 'Gdzie odebrać',
@@ -703,13 +724,14 @@ extension on Translations {
 			'orders.newOrder.cipSessionExpired' => 'Sesja CIP wygasła - wyloguj się i zaloguj ponownie.',
 			'orders.newOrder.cipUnreachable' => 'Nie udało się połączyć z CIP.',
 			'orders.newOrder.linePick' => 'Wybierz linię',
-			'orders.newOrder.itemsChosen' => 'Do przywiezienia',
+			'orders.newOrder.itemsChosen' => 'Zamawiasz',
 			'orders.newOrder.noteAdd' => 'Dodaj uwagę',
 			'orders.newOrder.submitWithItems' => ({required Object count}) => 'Złóż zamówienie (${count} poz.)',
 			'orders.newOrder.save' => 'Zapisz zmiany',
 			'orders.newOrder.editTitleFor' => ({required Object type}) => 'Edycja: ${type}',
 			'orders.newOrder.cipSpoolsTitle' => 'Szpule z tego zamówienia',
 			'orders.newOrder.cipNoSpools' => 'To zamówienie nie ma przypisanej szpuli.',
+			'orders.newOrder.swapPlaces' => 'Zamień skąd i dokąd',
 			'orders.sectionProblem' => 'Problem',
 			'orders.sectionAwaitingAccept' => 'Oczekujące na akceptację',
 			'orders.sectionInProgress' => 'Obecnie realizowane',
@@ -720,6 +742,10 @@ extension on Translations {
 			'orders.chat.loadError' => 'Nie udało się pobrać czatu.',
 			'orders.chat.sendError' => 'Nie udało się wysłać wiadomości.',
 			'orders.history.allLoaded' => 'To już wszystko.',
+			'orders.priority.label' => 'Priorytet',
+			'orders.priority.normal' => 'Zwykły',
+			'orders.priority.urgent' => 'Pilny',
+			'orders.priority.critical' => 'Bardzo pilny',
 			'account.logout' => 'Wyloguj',
 			'account.language' => 'Język',
 			'account.languagePolish' => 'Polski',

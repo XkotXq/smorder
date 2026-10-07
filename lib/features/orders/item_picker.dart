@@ -5,12 +5,17 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/api/sm_catalog_api.dart';
 import '../../i18n/gen/strings.g.dart';
 import 'orders_api.dart';
+import 'quantity_stepper.dart';
 
 /// One added row - quantity is kept as free text while editing (same
 /// "blank defaults to 1 at submit" rule as wps's own validRows) rather than
 /// parsed on every keystroke.
 class ItemRow {
-  ItemRow({required this.itemNo, required this.itemName, this.quantity = ''});
+  /// A row starts at one: adding a material is already the statement
+  /// that one is wanted, and an empty box asked every row to be answered
+  /// twice. The stepper's own minus removes it, so "none" is still one tap
+  /// away (see QuantityStepper).
+  ItemRow({required this.itemNo, required this.itemName, this.quantity = '1'});
   final String itemNo;
   final String itemName;
   String quantity;
@@ -23,7 +28,9 @@ class ItemRow {
 
 /// Adds materials to a material_order/spool_order - search the catalog by
 /// item number or name, tap a match to add it as a row below with its own
-/// quantity field (order_items are always counted by piece, "szt." - see
+/// quantity stepper, which also takes a typed number and removes the row
+/// when minus is pressed at one (see QuantityStepper)
+/// (order_items are always counted by piece, "szt." - see
 /// wpsApi's AGENTS.md, "Transport orders"; never the catalog's own km/kg
 /// unit). Same search/add shape as wps's own NewOrderPanel, minus its
 /// CIP-order-scoped picker for material_order specifically (orderMatches) -
@@ -176,28 +183,33 @@ class ItemPickerState extends ConsumerState<ItemPicker> {
                   // the neutral grey disappears on this filled background.
                   if (i > 0) Container(height: 1, color: theme.colorScheme.primary.withValues(alpha: 0.18)),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
                     child: Row(
                       children: [
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(widget.rows[i].itemName, style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600)),
+                              Text(
+                                widget.rows[i].itemName,
+                                style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               Text(widget.rows[i].itemNo, style: theme.textTheme.muted.copyWith(fontSize: 11)),
                             ],
                           ),
                         ),
                         const SizedBox(width: 8),
-                        SizedBox(
-                          width: 70,
-                          child: ShadInput(
-                            placeholder: const Text('1'),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            onChanged: (v) => _setQuantity(i, v),
-                          ),
+                        QuantityStepper(
+                          // Keyed by the material, not the index: removing a
+                          // row above this one must not hand its controller
+                          // (and its number) to a different material.
+                          key: ValueKey(widget.rows[i].itemNo),
+                          value: widget.rows[i].quantity,
+                          onChanged: (v) => _setQuantity(i, v),
+                          onRemove: () => _removeAt(i),
                         ),
-                        _RemoveRowButton(onPressed: () => _removeAt(i)),
                       ],
                     ),
                   ),
@@ -207,27 +219,6 @@ class ItemPickerState extends ConsumerState<ItemPicker> {
           ),
         ],
       ],
-    );
-  }
-}
-
-/// A small tap target to drop an added row - plain GestureDetector (not
-/// Material's IconButton, this app has no MaterialApp ancestor - see
-/// main.dart's own ShadApp).
-class _RemoveRowButton extends StatelessWidget {
-  const _RemoveRowButton({required this.onPressed});
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Icon(LucideIcons.x, size: 18, color: theme.colorScheme.mutedForeground),
-      ),
     );
   }
 }

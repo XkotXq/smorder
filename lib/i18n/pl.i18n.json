@@ -33,7 +33,7 @@
       "goods_transport": "Transport półproduktów",
       "waste_removal": "Wywożenie odpadu",
       "warehouse_return": "Zwrot na magazyn",
-      "machine_transport": "Transport maszyny"
+      "machine_transport": "Przewóz maszyny"
     },
     "status": {
       "new": "Nowe",
@@ -98,7 +98,6 @@
     "newOrder": {
       "button": "Nowe zamówienie",
       "pickType": "Wybierz typ zamówienia",
-      "titleFor": "Nowe zamówienie: {type}",
       "fieldFrom": "Skąd",
       "fieldPlace": "Miejsce",
       "fieldCollectFrom": "Gdzie odebrać",
@@ -128,13 +127,14 @@
       "cipSessionExpired": "Sesja CIP wygasła - wyloguj się i zaloguj ponownie.",
       "cipUnreachable": "Nie udało się połączyć z CIP.",
       "linePick": "Wybierz linię",
-      "itemsChosen": "Do przywiezienia",
+      "itemsChosen": "Zamawiasz",
       "noteAdd": "Dodaj uwagę",
       "submitWithItems": "Złóż zamówienie ({count} poz.)",
       "save": "Zapisz zmiany",
       "editTitleFor": "Edycja: {type}",
       "cipSpoolsTitle": "Szpule z tego zamówienia",
-      "cipNoSpools": "To zamówienie nie ma przypisanej szpuli."
+      "cipNoSpools": "To zamówienie nie ma przypisanej szpuli.",
+      "swapPlaces": "Zamień skąd i dokąd"
     },
     "sectionProblem": "Problem",
     "sectionAwaitingAccept": "Oczekujące na akceptację",
@@ -149,6 +149,12 @@
     },
     "history": {
       "allLoaded": "To już wszystko."
+    },
+    "priority": {
+      "label": "Priorytet",
+      "normal": "Zwykły",
+      "urgent": "Pilny",
+      "critical": "Bardzo pilny"
     }
   },
   "account": {

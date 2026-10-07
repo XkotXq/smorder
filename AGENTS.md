@@ -110,9 +110,11 @@ wpsApi keys it. A failed upload reports the attachment specifically and
 keeps the order - it was placed, and the forklift operator can already see
 it. Bytes rather than a path, because on web an `XFile` has no real path.
 
-Offered on `waste_removal` only for now; wps offers one for
-`goods_transport` and `warehouse_return` too, and adding either is one
-entry in `order_types.dart` now that the whole upload path exists.
+Offered on every type that moves a physical thing: `waste_removal`,
+`goods_transport`, `machine_transport` and `warehouse_return` (2026-10-05).
+Not on `material_order`/`spool_order`, which are already a list of item
+numbers, nor on `water_refill`. Adding one to another type is a single
+`OrderField.photo` in `order_types.dart`.
 
 ## Design: `../wps` is the reference
 **Take after wps, and not only its palette.** One person moves between the

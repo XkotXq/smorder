@@ -51,9 +51,14 @@ class OrderTypeConfig {
   bool has(OrderField f) => fields.contains(f);
 }
 
-/// Same six types (and order) as wps's own "Nowe zamówienie" menu -
-/// `machine_transport` exists in wpsApi's schema but isn't offered there
-/// either (see wpsApi's AGENTS.md, "Transport orders").
+/// The types this app can place, in wps's own menu order.
+///
+/// `machine_transport` was in wpsApi's schema from the start but offered
+/// by nobody until 2026-10-05. Its places are free text, like
+/// goods_transport: a machine goes to a workshop or a hall as readily as to
+/// a line, and the server's own rule says which types may do that (see
+/// schema.sql's orders_before_insert - a text box on a line-restricted type
+/// would only collect a rejection).
 const orderTypes = [
   OrderTypeConfig(
     code: 'water_refill',
@@ -84,7 +89,7 @@ const orderTypes = [
   ),
   OrderTypeConfig(
     code: 'goods_transport',
-    fields: {OrderField.from, OrderField.to},
+    fields: {OrderField.from, OrderField.to, OrderField.photo},
     icon: LucideIcons.truck,
     iconLight: AppColors.orange600,
     iconDark: AppColors.orange400,
@@ -98,8 +103,16 @@ const orderTypes = [
     iconDark: AppColors.yellow400,
   ),
   OrderTypeConfig(
+    code: 'machine_transport',
+    fields: {OrderField.from, OrderField.to, OrderField.photo},
+    freeText: true,
+    icon: LucideIcons.forklift,
+    iconLight: AppColors.gray600,
+    iconDark: AppColors.neutral300,
+  ),
+  OrderTypeConfig(
     code: 'warehouse_return',
-    fields: {OrderField.from},
+    fields: {OrderField.from, OrderField.photo},
     icon: LucideIcons.undo2,
     iconLight: AppColors.green600,
     iconDark: AppColors.green400,

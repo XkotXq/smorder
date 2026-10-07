@@ -375,7 +375,12 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (_order != null) ...[
+                  // Only once a conversation exists. A chat is started from
+                  // the problem footer, which is up only when an answer is
+                  // owed, so this button never opens an empty thread - it is
+                  // how you get back to one that has something in it. Same
+                  // rule in smVendor and on this app's own list cards.
+                  if (_order != null && _order!.messageCount > 0) ...[
                     // Unread first - that is the number worth a glance.
                     // With nothing unread it falls back to the thread's own
                     // size, muted, so an existing conversation is still
@@ -395,9 +400,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                                 color: theme.colorScheme.primary,
                               ),
                             )
-                          : _order!.messageCount > 0
-                          ? Text('${_order!.messageCount}', style: theme.textTheme.muted)
-                          : const SizedBox.shrink(),
+                          : Text('${_order!.messageCount}', style: theme.textTheme.muted),
                     ),
                     const SizedBox(width: 4),
                   ],

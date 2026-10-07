@@ -4,6 +4,8 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../../core/session/recent_lines_providers.dart';
 import '../../i18n/gen/strings.g.dart';
+import '../../widgets/chip_grid.dart';
+import '../../widgets/option_chip.dart';
 import 'line_codes.dart';
 
 /// The destination line, as the **first and largest thing on the form**.
@@ -17,7 +19,8 @@ import 'line_codes.dart';
 ///
 /// Picking from the full list opens a bottom sheet, the same shape as the
 /// order-type picker on the list screen - on a phone a sheet of big rows
-/// beats a dropdown.
+/// beats a dropdown. Every "tap one of these" on this form is the same
+/// 48dp OptionChip (see widgets/option_chip.dart), recent lines included.
 class LineHeroField extends ConsumerWidget {
   const LineHeroField({super.key, required this.label, required this.value, required this.onChanged});
 
@@ -82,40 +85,15 @@ class LineHeroField extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [for (final line in recent) _RecentChip(line: line, onTap: () => onChanged(line))],
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [for (final line in recent) OptionChip(label: line, onTap: () => onChanged(line))],
                 ),
               ),
             ],
           ],
         ),
       ],
-    );
-  }
-}
-
-/// A previously used line. Deliberately quieter than the hero block - it is
-/// a shortcut, not the current answer.
-class _RecentChip extends StatelessWidget {
-  const _RecentChip({required this.line, required this.onTap});
-  final String line;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: theme.colorScheme.border),
-        ),
-        child: Text(line, style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600)),
-      ),
     );
   }
 }
@@ -138,6 +116,18 @@ class _LineSheet extends StatelessWidget {
 
     return ShadSheet(
       title: Text(label),
+      // A bottom sheet insets its bottom edge for the gesture bar and
+      // nothing else - by design, since one is not supposed to reach the
+      // top. This one does: twenty-four line codes, three to a row, fill a
+      // phone. Without a ceiling its title ends up under the clock and the
+      // notification icons.
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height - MediaQuery.paddingOf(context).top - 24,
+      ),
+      // ...and with a ceiling the list has to be able to scroll under it,
+      // or a shorter phone clips the last group instead of overlapping the
+      // status bar.
+      scrollable: true,
       child: Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 8),
         child: Column(
@@ -149,31 +139,19 @@ class _LineSheet extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 12, bottom: 8),
                 child: Text(entry.key, style: theme.textTheme.muted.copyWith(fontWeight: FontWeight.w700)),
               ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              // Three to a row, every cell the same width. A Wrap sized
+              // each chip to its own text, which on four-character codes
+              // left a ragged right edge and a different target width per
+              // code; a column grid reads as a keypad and gives every code
+              // the same, larger target.
+              ChipGrid(
+                columns: 3,
                 children: [
                   for (final code in entry.value)
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                    OptionChip(
+                      label: code,
+                      selected: code == selected,
                       onTap: () => Navigator.of(context).pop(code),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: code == selected ? theme.colorScheme.accent : null,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: code == selected ? theme.colorScheme.primary : theme.colorScheme.border,
-                          ),
-                        ),
-                        child: Text(
-                          code,
-                          style: theme.textTheme.p.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: code == selected ? theme.colorScheme.primary : null,
-                          ),
-                        ),
-                      ),
                     ),
                 ],
               ),
@@ -214,6 +192,18 @@ class _FreeTextLocationFieldState extends State<FreeTextLocationField> {
   }
 
   @override
+  void didUpdateWidget(FreeTextLocationField old) {
+    super.didUpdateWidget(old);
+    // The controller was seeded once at init, so a value the *form* changed
+    // - swapping skąd/dokąd - would otherwise never reach the text. Guarded
+    // against our own onChanged coming back, which would fight the caret
+    // mid-word.
+    if (widget.value != old.value && widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
@@ -246,27 +236,20 @@ class _FreeTextLocationFieldState extends State<FreeTextLocationField> {
         ),
         if (_focused && matches.isNotEmpty) ...[
           const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
+          // Two to a row: these are place names, not four-character
+          // codes, so half the width is what keeps one readable.
+          ChipGrid(
+            columns: 2,
             children: [
               for (final s in matches)
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                OptionChip(
+                  label: s,
                   onTap: () {
                     _controller.text = s;
                     widget.onChanged(s);
                     _focusNode.unfocus();
                     setState(() {});
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.accent,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(s, style: theme.textTheme.small),
-                  ),
                 ),
             ],
           ),

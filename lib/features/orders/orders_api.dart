@@ -66,6 +66,7 @@ class TransportOrder {
     required this.fulfilledBy,
     required this.createdAt,
     required this.note,
+    this.priority = 'normal',
     required this.details,
     required this.items,
     required this.cancelReason,
@@ -98,6 +99,7 @@ class TransportOrder {
     fulfilledBy: json['fulfilledBy'] as String? ?? '-',
     createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
     note: json['note'] as String? ?? '-',
+    priority: json['priority'] as String? ?? 'normal',
     details: (json['details'] as Map?)?.cast<String, dynamic>() ?? const {},
     items: (json['items'] as List? ?? const []).map((e) => OrderItem.fromJson(e as Map<String, dynamic>)).toList(),
     // This app's own "Zgłoś problem" on a delivered order (delivered ->
@@ -151,6 +153,12 @@ class TransportOrder {
   final String fulfilledBy;
   final DateTime createdAt;
   final String note;
+
+  /// How urgent the person who placed it said it is: 'normal', 'urgent' or
+  /// 'critical' (wpsApi's own PRIORITIES, least to most). Only a label -
+  /// nothing on the server reorders a queue by it - but it is what the
+  /// forklift operator's card colours its three-bar icon from.
+  final String priority;
   final Map<String, dynamic> details;
   final List<OrderItem> items;
   final String? cancelReason;
@@ -317,6 +325,7 @@ class OrdersApi {
     String? to,
     Map<String, dynamic> details = const {},
     String note = '',
+    String priority = 'normal',
     List<NewOrderItem> items = const [],
   }) async {
     final res = await _dio.post<Map<String, dynamic>>(
@@ -328,6 +337,7 @@ class OrdersApi {
         'to': to,
         'details': details,
         'note': note,
+        'priority': priority,
         'items': items.map((i) => i.toJson()).toList(),
       },
     );

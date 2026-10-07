@@ -7,10 +7,12 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../../core/session/recent_lines_providers.dart';
 import '../../core/session/session_providers.dart';
 import '../../i18n/gen/strings.g.dart';
+import '../../widgets/option_chip.dart';
 import 'cip_materials_field.dart';
 import 'item_picker.dart';
 import 'location_fields.dart';
 import 'photo_field.dart';
+import 'order_priority.dart';
 import 'order_status.dart';
 import 'order_types.dart';
 import 'orders_api.dart';
@@ -20,12 +22,18 @@ import 'orders_api.dart';
 /// - water_refill: to + water (clean/dirty)
 /// - material_order: to + productionOrderNo + items
 /// - spool_order: to + items
-/// - goods_transport: from + to, both free text with suggestions
-/// - waste_removal: from (place)
-/// - warehouse_return: from (gdzie odebrać)
+/// - goods_transport: from + to (free text with suggestions) + photo
+/// - waste_removal: from (place) + photo
+/// - machine_transport: from + to (free text with suggestions) + photo
+/// - warehouse_return: from (gdzie odebrać) + photo
 ///
-/// No photo field (unlike wps's own form) - see OrdersApi.create's own
-/// comment on why that's a dead field everywhere today.
+/// **Photo on every type that moves a physical thing**, since 2026-10-05:
+/// what was loaded, what state it was in, where it was left. The four types
+/// above are the ones where the answer is a thing rather than a quantity -
+/// a material order is already a list of item numbers, and a water refill
+/// is water. The upload itself is unchanged and runs after the order
+/// exists (see _submit and OrdersApi.uploadPhoto): wpsApi keys a photo by
+/// the order's id, so there is nothing to attach it to until then.
 class NewOrderPage extends ConsumerStatefulWidget {
   const NewOrderPage({super.key, required this.typeCode, this.editing});
   final String typeCode;
@@ -54,6 +62,9 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
   Timer? _lockTimer;
 
   String _from = '';
+  /// Starts at the ordinary level, so placing a transport takes no decision
+  /// about urgency unless there is one to make.
+  String _priority = 'normal';
   String _to = '';
   String _water = '';
   final _productionOrderNoController = TextEditingController();
@@ -74,6 +85,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
     final editing = widget.editing;
     if (editing != null) {
       _from = editing.from ?? '';
+      _priority = editing.priority;
       _to = editing.to ?? '';
       _water = editing.water ?? '';
       _productionOrderNoController.text = editing.productionOrderNo ?? '';
@@ -132,6 +144,17 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
     return _isValidPlace;
   }
 
+  /// Nothing to exchange until at least one side has a place in it.
+  bool get _canSwap => _from.trim().isNotEmpty || _to.trim().isNotEmpty;
+
+  void _swapPlaces() {
+    setState(() {
+      final from = _from;
+      _from = _to;
+      _to = from;
+    });
+  }
+
   List<ItemRow> get _validItems => _items.where((r) {
     final q = double.tryParse(r.quantity.trim().isEmpty ? '1' : r.quantity.trim());
     return q != null && q > 0;
@@ -178,6 +201,7 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
             to: _config.has(OrderField.to) ? _to.trim() : null,
             details: details,
             note: _noteController.text.trim(),
+            priority: _priority,
             items: _config.has(OrderField.items) ? _validItems.map((r) => r.toNewOrderItem()).toList() : const [],
           );
 
@@ -271,9 +295,16 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
+                      // The type alone. "Nowe zamówienie: Zamówienie
+                      // materiału" spent the widest line on the screen
+                      // saying "new order" to somebody who just tapped
+                      // "new order" and picked that type - and then
+                      // truncated the half that was news. Editing keeps its
+                      // prefix, which is the one case where the screen is
+                      // not what the previous tap implied.
                       _isEdit
                           ? t.newOrder.editTitleFor(type: orderTypeLabel(context.t, _config.code))
-                          : t.newOrder.titleFor(type: orderTypeLabel(context.t, _config.code)),
+                          : orderTypeLabel(context.t, _config.code),
                       style: theme.textTheme.h3.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -291,9 +322,34 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: fromField()),
+                        // The separator earns its place by doing something:
+                        // the return leg of a transport is the same two
+                        // places the other way round, and this is the one
+                        // form where both of them are typed by hand. A
+                        // 48dp target, sitting where the static arrow was.
                         Padding(
-                          padding: const EdgeInsets.only(top: 34, left: 8, right: 8),
-                          child: Icon(LucideIcons.arrowRight, size: 18, color: theme.colorScheme.mutedForeground),
+                          padding: const EdgeInsets.only(top: 20),
+                          child: Semantics(
+                            button: true,
+                            label: t.newOrder.swapPlaces,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _canSwap ? _swapPlaces : null,
+                              child: SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: Center(
+                                  child: Icon(
+                                    LucideIcons.arrowLeftRight,
+                                    size: 18,
+                                    color: _canSwap
+                                        ? theme.colorScheme.foreground
+                                        : theme.colorScheme.mutedForeground,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                         Expanded(child: toField()),
                       ],
@@ -308,15 +364,20 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                     const SizedBox(height: 16),
                     Text(t.details.water, style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
+                    // Two answers, so each takes half the width: the
+                    // largest target the screen can give them, instead of
+                    // two text-width chips sitting at the left edge.
                     Row(
                       children: [
-                        _WaterOption(
+                        OptionChip(
+                          expand: true,
                           label: t.details.clean,
                           selected: _water == 'clean',
                           onTap: () => setState(() => _water = 'clean'),
                         ),
                         const SizedBox(width: 12),
-                        _WaterOption(
+                        OptionChip(
+                          expand: true,
                           label: t.details.dirty,
                           selected: _water == 'dirty',
                           onTap: () => setState(() => _water = 'dirty'),
@@ -360,6 +421,28 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
                     const SizedBox(height: 16),
                     PhotoField(photo: _photo, onChanged: (photo) => setState(() => _photo = photo)),
                   ],
+
+                  // Urgency, on every type: the forklift operator's queue
+                  // shows it as a coloured icon, and this is the only place
+                  // anybody states it.
+                  const SizedBox(height: 16),
+                  Text(t.priority.label, style: theme.textTheme.small.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      for (final level in orderPriorities) ...[
+                        if (level != orderPriorities.first) const SizedBox(width: 8),
+                        OptionChip(
+                          expand: true,
+                          icon: orderPriorityIcon,
+                          iconColor: orderPriorityColor(level, theme.brightness),
+                          label: orderPriorityLabel(context.t, level),
+                          selected: _priority == level,
+                          onTap: () => setState(() => _priority = level),
+                        ),
+                      ],
+                    ],
+                  ),
 
                   // Optional, so it stays one quiet line until somebody
                   // wants it - it used to take as much room as the
@@ -441,36 +524,5 @@ class _NewOrderPageState extends ConsumerState<NewOrderPage> {
     if (_isEdit) return t.save;
     if (!_config.has(OrderField.items) || _validItems.isEmpty) return t.submit;
     return t.submitWithItems(count: _validItems.length);
-  }
-}
-
-class _WaterOption extends StatelessWidget {
-  const _WaterOption({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = ShadTheme.of(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? theme.colorScheme.accent : null,
-          border: Border.all(color: selected ? theme.colorScheme.primary : theme.colorScheme.border),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          label,
-          style: theme.textTheme.p.copyWith(
-            color: selected ? theme.colorScheme.primary : theme.colorScheme.mutedForeground,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
   }
 }

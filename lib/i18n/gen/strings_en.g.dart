@@ -98,6 +98,7 @@ class _Translations$orders$en implements Translations$orders$pl {
 	@override String get sectionNew => 'New';
 	@override late final _Translations$orders$chat$en chat = _Translations$orders$chat$en._(_root);
 	@override late final _Translations$orders$history$en history = _Translations$orders$history$en._(_root);
+	@override late final _Translations$orders$priority$en priority = _Translations$orders$priority$en._(_root);
 }
 
 // Path: account
@@ -243,7 +244,6 @@ class _Translations$orders$newOrder$en implements Translations$orders$newOrder$p
 	// Translations
 	@override String get button => 'New order';
 	@override String get pickType => 'Pick an order type';
-	@override String titleFor({required Object type}) => 'New order: ${type}';
 	@override String get fieldFrom => 'From';
 	@override String get fieldPlace => 'Place';
 	@override String get fieldCollectFrom => 'Collect from';
@@ -273,13 +273,14 @@ class _Translations$orders$newOrder$en implements Translations$orders$newOrder$p
 	@override String get cipSessionExpired => 'The CIP session expired - log out and log in again.';
 	@override String get cipUnreachable => 'Failed to connect to CIP.';
 	@override String get linePick => 'Pick a line';
-	@override String get itemsChosen => 'To bring';
+	@override String get itemsChosen => 'Ordering';
 	@override String get noteAdd => 'Add a note';
 	@override String submitWithItems({required Object count}) => 'Place order (${count} items)';
 	@override String get save => 'Save changes';
 	@override String editTitleFor({required Object type}) => 'Editing: ${type}';
 	@override String get cipSpoolsTitle => 'Spools on this order';
 	@override String get cipNoSpools => 'This order has no spool assigned.';
+	@override String get swapPlaces => 'Swap from and to';
 }
 
 // Path: orders.chat
@@ -304,6 +305,19 @@ class _Translations$orders$history$en implements Translations$orders$history$pl 
 
 	// Translations
 	@override String get allLoaded => 'That\'s everything.';
+}
+
+// Path: orders.priority
+class _Translations$orders$priority$en implements Translations$orders$priority$pl {
+	_Translations$orders$priority$en._(this._root);
+
+	final TranslationsEn _root; // ignore: unused_field
+
+	// Translations
+	@override String get label => 'Priority';
+	@override String get normal => 'Normal';
+	@override String get urgent => 'Urgent';
+	@override String get critical => 'Critical';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -395,7 +409,6 @@ extension on TranslationsEn {
 			'orders.details.productionOrderNo' => 'Order number',
 			'orders.newOrder.button' => 'New order',
 			'orders.newOrder.pickType' => 'Pick an order type',
-			'orders.newOrder.titleFor' => ({required Object type}) => 'New order: ${type}',
 			'orders.newOrder.fieldFrom' => 'From',
 			'orders.newOrder.fieldPlace' => 'Place',
 			'orders.newOrder.fieldCollectFrom' => 'Collect from',
@@ -425,13 +438,14 @@ extension on TranslationsEn {
 			'orders.newOrder.cipSessionExpired' => 'The CIP session expired - log out and log in again.',
 			'orders.newOrder.cipUnreachable' => 'Failed to connect to CIP.',
 			'orders.newOrder.linePick' => 'Pick a line',
-			'orders.newOrder.itemsChosen' => 'To bring',
+			'orders.newOrder.itemsChosen' => 'Ordering',
 			'orders.newOrder.noteAdd' => 'Add a note',
 			'orders.newOrder.submitWithItems' => ({required Object count}) => 'Place order (${count} items)',
 			'orders.newOrder.save' => 'Save changes',
 			'orders.newOrder.editTitleFor' => ({required Object type}) => 'Editing: ${type}',
 			'orders.newOrder.cipSpoolsTitle' => 'Spools on this order',
 			'orders.newOrder.cipNoSpools' => 'This order has no spool assigned.',
+			'orders.newOrder.swapPlaces' => 'Swap from and to',
 			'orders.sectionProblem' => 'Problem',
 			'orders.sectionAwaitingAccept' => 'Awaiting your confirmation',
 			'orders.sectionInProgress' => 'In progress',
@@ -442,6 +456,10 @@ extension on TranslationsEn {
 			'orders.chat.loadError' => 'Could not load the chat.',
 			'orders.chat.sendError' => 'Could not send the message.',
 			'orders.history.allLoaded' => 'That\'s everything.',
+			'orders.priority.label' => 'Priority',
+			'orders.priority.normal' => 'Normal',
+			'orders.priority.urgent' => 'Urgent',
+			'orders.priority.critical' => 'Critical',
 			'account.logout' => 'Log out',
 			'account.language' => 'Language',
 			'account.languagePolish' => 'Polski',

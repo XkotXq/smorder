@@ -1,7 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required by every build that talks to wpsApi, which is all of them.
+         `flutter create` puts this in src/debug/ and src/profile/ only - the
+         Flutter tool needs it for hot reload - so a **release** APK built
+         from the untouched scaffold has no network access at all and every
+         request fails as "nie udało się połączyć z serwerem". It went
+         unnoticed because AGENTS.md documents the debug build as the way to
+         put this app on a phone. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="smorder"
         android:name="${applicationName}"
+        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

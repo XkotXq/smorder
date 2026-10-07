@@ -32,9 +32,11 @@ class CipMaterialsField extends ConsumerStatefulWidget {
   });
 
   /// "Zamówienie szpul": list only the drums/spools this order's cable ships
-  /// on (CipOrderMaterial.isDrumRequirement) and leave the materials out. On
-  /// a material order it is the other way round - a drum is not something
-  /// the line is asking to be brought as stock.
+  /// on (CipOrderMaterial.isDrumRequirement) and leave the materials out.
+  ///
+  /// A material order does **not** do the reverse: it lists everything the
+  /// production order needs, drum included. Making the two exclusive is
+  /// what hid a spool people were ordering from the material form.
   final bool onlyDrums;
 
   /// The productionOrderNo field - owned by the form, since it is submitted
@@ -101,7 +103,12 @@ class _CipMaterialsFieldState extends ConsumerState<CipMaterialsField> {
           CipOrderLine(
             orderId: line.orderId,
             segDescription: line.segDescription,
-            materials: line.materials.where((m) => m.isDrumRequirement == widget.onlyDrums).toList(),
+            // Narrowed only when onlyDrums is set ("Zamówienie szpul",
+            // which is about the reel and nothing else). A material order
+            // keeps the whole list, drums included - they are part of what
+            // the production order needs, and dropping them here took a
+            // spool people were ordering off the screen.
+            materials: line.materials.where((m) => !widget.onlyDrums || m.isDrumRequirement).toList(),
           ),
       ];
       // Then drop lines left with nothing - the endpoint already filters to

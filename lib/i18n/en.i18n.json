@@ -98,7 +98,6 @@
     "newOrder": {
       "button": "New order",
       "pickType": "Pick an order type",
-      "titleFor": "New order: {type}",
       "fieldFrom": "From",
       "fieldPlace": "Place",
       "fieldCollectFrom": "Collect from",
@@ -128,13 +127,14 @@
       "cipSessionExpired": "The CIP session expired - log out and log in again.",
       "cipUnreachable": "Failed to connect to CIP.",
       "linePick": "Pick a line",
-      "itemsChosen": "To bring",
+      "itemsChosen": "Ordering",
       "noteAdd": "Add a note",
       "submitWithItems": "Place order ({count} items)",
       "save": "Save changes",
       "editTitleFor": "Editing: {type}",
       "cipSpoolsTitle": "Spools on this order",
-      "cipNoSpools": "This order has no spool assigned."
+      "cipNoSpools": "This order has no spool assigned.",
+      "swapPlaces": "Swap from and to"
     },
     "sectionProblem": "Problem",
     "sectionAwaitingAccept": "Awaiting your confirmation",
@@ -149,6 +149,12 @@
     },
     "history": {
       "allLoaded": "That's everything."
+    },
+    "priority": {
+      "label": "Priority",
+      "normal": "Normal",
+      "urgent": "Urgent",
+      "critical": "Critical"
     }
   },
   "account": {
